@@ -8,6 +8,7 @@
         />
         <title>Mission Control Dashboard</title>
         <link rel="stylesheet" href="styles.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
     </head>
     <body>
         <div class="refresh-indicator" id="refreshIndicator"></div>
@@ -34,7 +35,7 @@
                     <div class="time" id="time">--:--:--</div>
                     <div class="date" id="date">Loading...</div>
                 </div>
-                <div class="weather-section">
+                <div class="weather-section" onclick="showWeatherDetails()">
                     <div class="weather-icon" id="weatherIcon">🌤️</div>
                     <div class="weather-info">
                         <div class="temperature" id="temperature">18°C</div>
@@ -180,6 +181,32 @@
                 </div>
                 <div class="modal-body" id="taskModalBody">
                     <!-- Task details will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="weatherModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="ti ti-cloud"></i> Weather Forecast
+                    </div>
+                    <button class="close-btn" onclick="closeModal('weatherModal')">
+                        &times;
+                    </button>
+                </div>
+                <div class="modal-body" id="weatherModalBody">
+                    <div class="weather-view-controls">
+                        <button class="view-btn active" data-view="hourly" onclick="switchWeatherView('hourly')">
+                            <i class="ti ti-clock"></i> Hourly
+                        </button>
+                        <button class="view-btn" data-view="daily" onclick="switchWeatherView('daily')">
+                            <i class="ti ti-calendar"></i> 5-Day
+                        </button>
+                    </div>
+                    <div class="weather-forecast-container" id="weatherForecastContainer">
+                        <!-- Weather forecast will be populated here -->
+                    </div>
                 </div>
             </div>
         </div>

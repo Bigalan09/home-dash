@@ -5,6 +5,7 @@ const API_CONFIG = {
     TASKS: "/api/tasks",
     CALENDAR: "/api/calendar",
     WEATHER: "/api/weather",
+    WEATHER_FORECAST: "/api/weather/forecast",
     TIME: "/api/time",
   },
 };
@@ -20,6 +21,8 @@ class MissionControlDashboard {
     this.currentWeekStart = new Date();
     this.events = [];
     this.tasks = [];
+    this.weatherForecast = null;
+    this.currentWeatherView = "hourly";
     this.lastActivity = Date.now();
     this.serverTimeOffset = 0; // Time offset from server
 
@@ -35,6 +38,7 @@ class MissionControlDashboard {
       this.loadEvents(),
       this.loadTasks(),
       this.loadWeather(),
+      this.loadWeatherForecast(),
     ]);
     this.initializeCalendarViews();
   }
@@ -229,6 +233,40 @@ class MissionControlDashboard {
     };
 
     return iconMap[main] || "🌤️";
+  }
+
+  async loadWeatherForecast() {
+    try {
+      const response = await fetch(API_CONFIG.ENDPOINTS.WEATHER_FORECAST);
+
+      if (!response.ok) {
+        throw new Error(`Weather forecast API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Check if we got an error response
+      if (data.error) {
+        console.warn("Weather forecast API not configured:", data.error);
+        this.weatherForecast = null;
+        return;
+      }
+
+      this.weatherForecast = data;
+      console.log("Weather forecast loaded successfully");
+
+      // Log cache status
+      if (data.cached) {
+        console.log(
+          `Weather forecast served from cache (${data.cache_age_minutes} minutes old)`,
+        );
+      } else {
+        console.log("Fresh weather forecast fetched from API");
+      }
+    } catch (error) {
+      console.error("Failed to load weather forecast:", error);
+      this.weatherForecast = null;
+    }
   }
 
   initializeDateTime() {
@@ -525,6 +563,140 @@ class MissionControlDashboard {
     return div.innerHTML;
   }
 
+  renderWeatherForecast() {
+    const container = document.getElementById("weatherForecastContainer");
+
+    if (!this.weatherForecast) {
+      container.innerHTML = '<div class="no-data">Weather forecast unavailable</div>';
+      return;
+    }
+
+    if (this.currentWeatherView === "hourly") {
+      this.renderHourlyForecast(container);
+    } else {
+      this.renderDailyForecast(container);
+    }
+  }
+
+  renderHourlyForecast(container) {
+    const hourlyData = this.weatherForecast.hourly;
+
+    if (!hourlyData || hourlyData.length === 0) {
+      container.innerHTML = '<div class="no-data">Hourly forecast not available</div>';
+      return;
+    }
+
+    // Show next 24 hours
+    const next24Hours = hourlyData.slice(0, 24);
+
+    const html = `
+      <div class="forecast-grid hourly-grid">
+        ${next24Hours.map((hour, index) => {
+          const date = new Date(hour.dt * 1000);
+          const time = date.toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+          const temp = Math.round(hour.temp || hour.main?.temp || 0);
+          const weatherIcon = this.getWeatherIcon(
+            hour.weather[0].main,
+            hour.weather[0].icon
+          );
+          const description = hour.weather[0].description;
+          const humidity = hour.humidity || hour.main?.humidity || 0;
+          const windSpeed = hour.wind_speed || hour.wind?.speed || 0;
+
+          return `
+            <div class="forecast-item ${index === 0 ? 'current' : ''}">
+              <div class="forecast-time">${index === 0 ? 'Now' : time}</div>
+              <div class="forecast-icon">${weatherIcon}</div>
+              <div class="forecast-temp">${temp}°C</div>
+              <div class="forecast-desc">${description}</div>
+              <div class="forecast-details">
+                <div class="detail-item">
+                  <i class="ti ti-droplet"></i>
+                  <span>${humidity}%</span>
+                </div>
+                <div class="detail-item">
+                  <i class="ti ti-wind"></i>
+                  <span>${Math.round(windSpeed)} m/s</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+
+    container.innerHTML = html;
+  }
+
+  renderDailyForecast(container) {
+    const dailyData = this.weatherForecast.daily;
+
+    if (!dailyData || dailyData.length === 0) {
+      container.innerHTML = '<div class="no-data">5-day forecast not available</div>';
+      return;
+    }
+
+    // Show next 5 days
+    const next5Days = dailyData.slice(0, 5);
+
+    const html = `
+      <div class="forecast-grid daily-grid">
+        ${next5Days.map((day, index) => {
+          const date = new Date(day.dt * 1000);
+          const dayName = index === 0 ? 'Today' : date.toLocaleDateString("en-GB", {
+            weekday: "long"
+          });
+          const dateStr = date.toLocaleDateString("en-GB", {
+            month: "short",
+            day: "numeric"
+          });
+
+          const tempDay = Math.round(day.temp?.day || day.temp?.max || 0);
+          const tempMin = Math.round(day.temp?.min || 0);
+          const tempMax = Math.round(day.temp?.max || day.temp?.day || 0);
+
+          const weatherIcon = this.getWeatherIcon(
+            day.weather[0].main,
+            day.weather[0].icon
+          );
+          const description = day.weather[0].description;
+          const humidity = day.humidity || 0;
+          const windSpeed = day.wind_speed || 0;
+
+          return `
+            <div class="forecast-item ${index === 0 ? 'current' : ''}">
+              <div class="forecast-day">
+                <div class="day-name">${dayName}</div>
+                <div class="day-date">${dateStr}</div>
+              </div>
+              <div class="forecast-icon">${weatherIcon}</div>
+              <div class="forecast-temps">
+                <div class="temp-high">${tempMax}°C</div>
+                <div class="temp-low">${tempMin}°C</div>
+              </div>
+              <div class="forecast-desc">${description}</div>
+              <div class="forecast-details">
+                <div class="detail-item">
+                  <i class="ti ti-droplet"></i>
+                  <span>${humidity}%</span>
+                </div>
+                <div class="detail-item">
+                  <i class="ti ti-wind"></i>
+                  <span>${Math.round(windSpeed)} m/s</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+
+    container.innerHTML = html;
+  }
+
   showRefreshIndicator() {
     const indicator = document.getElementById("refreshIndicator");
     indicator.classList.add("active");
@@ -586,7 +758,7 @@ class MissionControlDashboard {
   setupTouchFeedback() {
     // Add visual feedback for touch interactions on Pi display
     const touchElements = document.querySelectorAll(
-      ".calendar-day, .event, .todo-item, .system-btn, .view-btn, .month-nav",
+      ".calendar-day, .event, .todo-item, .system-btn, .view-btn, .month-nav, .weather-section",
     );
 
     touchElements.forEach((element) => {
@@ -821,6 +993,32 @@ window.showTaskDetails = function(taskId) {
 
 window.closeModal = function(modalId) {
   document.getElementById(modalId).classList.remove("active");
+}
+
+// Weather modal functions
+window.showWeatherDetails = function() {
+  if (!dashboard.weatherForecast) {
+    console.warn("Weather forecast data not available");
+    return;
+  }
+
+  const modal = document.getElementById("weatherModal");
+  modal.classList.add("active");
+
+  // Render the current view
+  dashboard.renderWeatherForecast();
+}
+
+window.switchWeatherView = function(view) {
+  dashboard.currentWeatherView = view;
+
+  // Update active button
+  document.querySelectorAll(".weather-view-controls .view-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.view === view);
+  });
+
+  // Render the selected view
+  dashboard.renderWeatherForecast();
 }
 
 // Initialize dashboard

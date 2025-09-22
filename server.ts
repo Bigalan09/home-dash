@@ -28,6 +28,7 @@ interface WeatherCache {
 }
 
 let weatherCache: WeatherCache | null = null;
+let forecastCache: WeatherCache | null = null;
 const WEATHER_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 // Completed events tracking (in-memory storage for demo - use database in production)
@@ -431,6 +432,128 @@ async function handleWeather(req: Request): Promise<Response> {
   }
 }
 
+async function handleWeatherForecast(req: Request): Promise<Response> {
+  if (
+    !env.OPENWEATHER_API_KEY ||
+    env.OPENWEATHER_API_KEY === "your_openweather_api_key_here"
+  ) {
+    return new Response(
+      JSON.stringify({
+        error: "Weather API key not configured",
+        forecast: {},
+        message: "Configure OPENWEATHER_API_KEY in .env file",
+      }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
+
+  // Check forecast cache first
+  const now = Date.now();
+  if (forecastCache && now - forecastCache.timestamp < WEATHER_CACHE_DURATION) {
+    console.log("Serving forecast data from cache");
+    return new Response(
+      JSON.stringify({
+        ...forecastCache.data,
+        cached: true,
+        cache_age_minutes: Math.round((now - forecastCache.timestamp) / 60000),
+      }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      },
+    );
+  }
+
+  try {
+    console.log("Fetching weather forecast from OpenWeather API");
+
+    // Try One Call 3.0 first for full forecast data
+    let response = await fetch(
+      `https://api.openweathermap.org/data/3.0/onecall?lat=${env.WEATHER_LAT}&lon=${env.WEATHER_LON}&exclude=minutely,alerts&appid=${env.OPENWEATHER_API_KEY}&units=${env.WEATHER_UNITS}`,
+    );
+
+    let data = await response.json();
+
+    // If One Call 3.0 fails, try One Call 2.5
+    if (
+      !response.ok &&
+      data.message &&
+      (data.message.includes("One Call 3.0") ||
+        data.message.includes("subscription"))
+    ) {
+      console.log("Falling back to One Call 2.5 API");
+      response = await fetch(
+        `https://api.openweathermap.org/data/2.5/onecall?lat=${env.WEATHER_LAT}&lon=${env.WEATHER_LON}&exclude=minutely,alerts&appid=${env.OPENWEATHER_API_KEY}&units=${env.WEATHER_UNITS}`,
+      );
+      data = await response.json();
+    }
+
+    // If both One Call APIs fail, try 5-day forecast API
+    if (!response.ok) {
+      console.log("Falling back to 5-day forecast API");
+      response = await fetch(
+        `https://api.openweathermap.org/data/2.5/forecast?lat=${env.WEATHER_LAT}&lon=${env.WEATHER_LON}&appid=${env.OPENWEATHER_API_KEY}&units=${env.WEATHER_UNITS}`,
+      );
+      const forecastData = await response.json();
+
+      if (response.ok) {
+        // Transform 5-day forecast to match One Call format
+        data = {
+          current: forecastData.list[0],
+          hourly: forecastData.list.slice(0, 24), // First 24 hours
+          daily: groupForecastByDay(forecastData.list),
+          api_version: "2.5-forecast"
+        };
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        `Weather forecast API Error: ${data.message || response.statusText}`,
+      );
+    }
+
+    // Cache the successful response
+    forecastCache = {
+      data: data,
+      timestamp: now,
+    };
+
+    console.log("Weather forecast fetched successfully");
+    return new Response(
+      JSON.stringify({
+        ...data,
+        cached: false,
+        fetch_time: new Date().toISOString(),
+        api_version: data.api_version || (data.hourly && data.daily ? "one-call" : "standard"),
+      }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      },
+    );
+  } catch (error) {
+    console.error("Weather forecast API error:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Failed to fetch weather forecast",
+        message: error.message,
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
+}
+
 async function handleTime(req: Request): Promise<Response> {
   // Try different time API endpoints with retry logic
   const timeEndpoints = [
@@ -544,6 +667,39 @@ function parseICSData(icsData: string, sourceName: string = "Unknown"): any[] {
   return events;
 }
 
+// Helper function to group 5-day forecast by day
+function groupForecastByDay(forecastList: any[]): any[] {
+  const dailyData: { [key: string]: any[] } = {};
+
+  forecastList.forEach(item => {
+    const date = new Date(item.dt * 1000).toISOString().split('T')[0];
+    if (!dailyData[date]) {
+      dailyData[date] = [];
+    }
+    dailyData[date].push(item);
+  });
+
+  return Object.entries(dailyData).slice(0, 5).map(([date, items]) => {
+    // Get mid-day item for daily summary or first item if no mid-day available
+    const midDayItem = items.find(item => {
+      const hour = new Date(item.dt * 1000).getHours();
+      return hour >= 11 && hour <= 15;
+    }) || items[0];
+
+    return {
+      dt: midDayItem.dt,
+      temp: {
+        day: midDayItem.main.temp,
+        min: Math.min(...items.map(i => i.main.temp_min)),
+        max: Math.max(...items.map(i => i.main.temp_max)),
+      },
+      weather: midDayItem.weather,
+      humidity: midDayItem.main.humidity,
+      wind_speed: midDayItem.wind?.speed || 0,
+    };
+  });
+}
+
 function formatICSDate(icsDate: string): string {
   if (!icsDate) return new Date().toISOString().split("T")[0];
 
@@ -646,6 +802,10 @@ const server = Bun.serve({
       return handleWeather(req);
     }
 
+    if (url.pathname === "/api/weather/forecast") {
+      return handleWeatherForecast(req);
+    }
+
     if (url.pathname === "/api/time") {
       return handleTime(req);
     }
@@ -678,4 +838,5 @@ console.log(`📡 API endpoints available:`);
 console.log(`   - /api/tasks (Todoist)`);
 console.log(`   - /api/calendar (Apple Calendar)`);
 console.log(`   - /api/weather (OpenWeather)`);
+console.log(`   - /api/weather/forecast (OpenWeather Forecast)`);
 console.log(`   - /api/time (World Time API)`);
