@@ -7,7 +7,7 @@
             content="width=720, height=1280, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
         />
         <title>Mission Control Dashboard</title>
-        <link rel="stylesheet" href="styles.css" />
+        <link rel="stylesheet" href="modern-light.css" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
     </head>
     <body>
@@ -18,14 +18,14 @@
                 <div class="system-controls">
                     <button
                         class="system-btn"
-                        onclick="dashboard.refreshData()"
+                        onclick="refreshData()"
                         title="Refresh Data"
                     >
                         <i class="ti ti-refresh"></i>
                     </button>
                     <button
                         class="system-btn"
-                        onclick="dashboard.toggleScreen()"
+                        onclick="toggleScreen()"
                         title="Screen Off"
                     >
                         <i class="ti ti-power"></i>
@@ -138,9 +138,9 @@
                         Tasks
                     </div>
                     <div class="view-controls">
-                        <button class="view-btn active" data-task-view="today">
+                        <button class="view-btn active" data-task-view="today" id="todayViewBtn">
                             <i class="ti ti-calendar-today"></i>
-                            Today
+                            <span id="todayViewText">Today</span>
                         </button>
                         <button class="view-btn" data-task-view="upcoming">
                             <i class="ti ti-calendar-week"></i>
@@ -218,6 +218,14 @@
                         <!-- Weather forecast will be populated here -->
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div class="toast" id="toast">
+            <div class="toast-content">
+                <i class="toast-icon ti ti-check"></i>
+                <span class="toast-message">Data refreshed successfully</span>
             </div>
         </div>
 

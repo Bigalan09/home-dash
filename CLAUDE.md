@@ -13,6 +13,8 @@ This is a **Mission Control Dashboard** - a sophisticated web application design
 - ✅ **Smart caching systems** for performance and API rate limiting
 - ✅ **Robust error handling** with graceful fallbacks
 - ✅ **Touch-optimized UI** specifically designed for Pi Touch Display 2
+- ✅ **Dual theme system** with modern light and futuristic dark themes
+- ✅ **Interactive weather forecast** with hourly and 5-day views
 
 ## Development Environment
 
@@ -30,12 +32,15 @@ Default to using Bun instead of Node.js for all JavaScript/TypeScript developmen
 ```
 /
 ├── index.html          # Clean HTML structure optimized for Pi Touch Display 2
-├── styles.css          # Comprehensive CSS with Pi-specific optimizations
+├── modern-light.css    # Modern light theme (default) - Todoist-inspired
+├── futuristic.css      # Original dark futuristic theme
+├── styles.css          # Legacy CSS file (preserved as backup)
 ├── script.js           # Application logic with touch event handling
 ├── server.ts           # Bun server with API proxies and caching
 ├── package.json        # Project dependencies and npm scripts
 ├── .env.example        # Environment configuration template
 ├── CLAUDE.md          # This documentation file
+├── CHANGELOG.md        # Recent changes and theme documentation
 └── docker-compose.yml  # Docker deployment configuration
 ```
 
@@ -64,26 +69,30 @@ Default to using Bun instead of Node.js for all JavaScript/TypeScript developmen
 - Responsive calendar views (daily/weekly/monthly)
 - Graceful API failure handling
 
-**3. Responsive Design System** (`styles.css`):
+**3. Dual Theme System** (`modern-light.css` / `futuristic.css`):
 - CSS Grid and Flexbox layouts
 - Touch-friendly 44px minimum targets
 - Animated background effects and transitions
 - Priority-based color coding system
 - Mobile-first responsive breakpoints
+- CSS custom properties for consistent theming
+- Modern light theme (default): Clean, Todoist-inspired design
+- Futuristic dark theme: Original space mission control aesthetic
 
 ## API Integration Architecture
 
 ### Server Proxy Endpoints
 ```typescript
 // Core Data Endpoints
-GET  /api/tasks           // Todoist tasks via REST API
-GET  /api/calendar        // Multi-source calendar aggregation
-GET  /api/weather         // OpenWeather with 30-min caching
-GET  /api/time           // World Time API with fallbacks
+GET  /api/tasks                // Todoist tasks via REST API
+GET  /api/calendar             // Multi-source calendar aggregation
+GET  /api/weather              // OpenWeather current with 30-min caching
+GET  /api/weather/forecast     // OpenWeather forecast (hourly + 5-day)
+GET  /api/time                // World Time API with fallbacks
 
 // Action Endpoints
-POST /api/tasks/complete  // Complete Todoist tasks
-POST /api/events/action   // Complete/dismiss calendar events
+POST /api/tasks/complete       // Complete Todoist tasks
+POST /api/events/action        // Complete/dismiss calendar events
 ```
 
 ### Multi-Source Calendar Integration
@@ -274,9 +283,54 @@ body {
 - **Memory Management**: Smart caching and cleanup
 - **Touch Responsiveness**: Passive event listeners
 
+## Theme System
+
+### Dual Theme Architecture
+The application now supports two distinct themes with seamless switching:
+
+**Modern Light Theme** (`modern-light.css`) - **Default**:
+```css
+/* CSS Custom Properties */
+:root {
+  --bg: #ffffff;                  /* Clean white background */
+  --text: #1f2328;               /* High contrast dark text */
+  --accent: #db4c3f;             /* Warm red accent (Todoist-like) */
+  --border: #e5e7eb;             /* Subtle grey borders */
+  --focus: #2563eb;              /* Accessible blue focus */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06); /* Subtle shadows */
+}
+```
+
+**Futuristic Dark Theme** (`futuristic.css`):
+```css
+/* Original space mission control aesthetic */
+:root {
+  --bg-primary: #0a0a0a;         /* Deep space black */
+  --primary-cyan: #00d4ff;       /* Cyan accents and glows */
+  --primary-green: #00ffaa;      /* Success indicators */
+  --text-primary: #e8f4fd;      /* Light blue-white text */
+}
+```
+
+### Theme Switching
+To switch themes, modify the stylesheet link in `index.html`:
+```html
+<!-- Modern Light Theme (default) -->
+<link rel="stylesheet" href="modern-light.css" />
+
+<!-- Futuristic Dark Theme -->
+<link rel="stylesheet" href="futuristic.css" />
+```
+
+### Accessibility Compliance
+- **WCAG AA compliant**: Text contrast ratios exceed 4.5:1 for normal text
+- **Focus indicators**: Clear, accessible outline styles
+- **Touch targets**: Minimum 44px for all interactive elements
+- **Color independence**: Information conveyed through multiple visual cues
+
 ## Design System
 
-### Color Palette
+### Color Palette (Modern Light Theme)
 ```css
 /* Primary Colors */
 --primary-cyan: #00d4ff      /* Primary accent */
@@ -432,14 +486,42 @@ if (!response.ok && data.message?.includes('One Call 3.0')) {
 }
 ```
 
-### 5. Touch Activity Tracking
+### 5. Interactive Weather Forecast Modal
+```javascript
+// Weather modal with hourly and 5-day forecast
+window.showWeatherDetails = function() {
+  if (!dashboard || !dashboard.weatherForecast) {
+    console.warn("Weather forecast data not available");
+    return;
+  }
+
+  const modal = document.getElementById("weatherModal");
+  modal.classList.add("active");
+  dashboard.renderWeatherForecast();
+}
+
+// View switching between hourly and daily forecasts
+window.switchWeatherView = function(view) {
+  dashboard.currentWeatherView = view;
+  dashboard.renderWeatherForecast();
+}
+```
+
+**Features**:
+- **Hourly Forecast**: Next 24 hours with temperature, weather, humidity, wind
+- **5-Day Forecast**: Daily highs/lows, weather conditions, and detailed metrics
+- **Interactive UI**: Touch-friendly view switching between hourly and daily
+- **Smart Caching**: 30-minute cache prevents API rate limit issues
+- **Fallback Handling**: Graceful degradation when API unavailable
+
+### 6. Touch Activity Tracking
 ```javascript
 // Show/hide pagination based on user activity
 setupActivityTracking() {
   const trackActivity = () => {
     this.lastActivity = Date.now();
     document.getElementById('pagination').classList.add('visible');
-    
+
     setTimeout(() => {
       if (Date.now() - this.lastActivity >= 6000) {
         pagination.classList.remove('visible');
@@ -668,4 +750,40 @@ docker-compose logs api | grep "Fetching"
 docker-compose logs api | grep -i error
 ```
 
-This comprehensive documentation provides everything needed to understand, maintain, and extend the Mission Control Dashboard. The application is production-ready with robust error handling, smart caching, and optimized performance for the Raspberry Pi Touch Display 2.
+## Recent Updates & Improvements
+
+### Theme System Implementation (September 2025)
+- **Dual Theme Support**: Added modern light theme alongside original futuristic dark theme
+- **CSS Custom Properties**: Implemented semantic color tokens for consistent theming
+- **Accessibility Compliance**: Ensured WCAG AA compliance across both themes
+- **Layout Preservation**: No layout changes during theme refactor - only visual styling updated
+- **Production Ready**: Both themes fully tested and optimized for Pi Touch Display 2
+
+### Weather Modal Enhancement (September 2025)
+- **Bug Fix**: Resolved weather modal not opening issue
+- **Robust Error Handling**: Added dashboard initialization checks
+- **Interactive Forecast**: Enhanced modal with hourly and 5-day weather views
+- **Touch Optimization**: Improved button sizing and interaction feedback
+- **API Integration**: Full OpenWeather One Call API integration with fallback support
+
+### Modern UI Improvements (September 2025)
+- **Theme Redesign**: Updated to modern light theme with Inter/Poppins fonts
+- **Color Palette**: Calming blue (#4299e1) and green (#48bb78) accent colors
+- **Animation Simplification**: Removed futuristic effects for clean, minimal interactions
+- **Toast Notifications**: Added success/error toast system for user feedback
+- **Button Feedback**: Enhanced all interactive elements with clear pressed states
+- **Overdue Tasks**: Smart highlighting with day count and dynamic "Today | Overdue" button text
+
+### Development Workflow
+- **Hot Reload**: Bun development server with automatic reloading
+- **Error Recovery**: Enhanced fallback systems for all external APIs
+- **Performance Monitoring**: Built-in logging and cache efficiency tracking
+- **Touch Testing**: Optimized for Pi Touch Display 2 with 44px minimum targets
+
+### Documentation
+- **Comprehensive Guides**: Complete setup, API configuration, and troubleshooting
+- **Code Examples**: Real implementation patterns and best practices
+- **Deployment Options**: Docker, direct server, and Pi kiosk mode instructions
+- **Extensibility**: Clear patterns for adding new features and API integrations
+
+This comprehensive documentation provides everything needed to understand, maintain, and extend the Mission Control Dashboard. The application is production-ready with robust error handling, smart caching, optimized performance for the Raspberry Pi Touch Display 2, and now features a modern dual-theme system with enhanced weather forecasting capabilities.

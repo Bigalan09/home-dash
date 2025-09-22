@@ -529,11 +529,27 @@ class MissionControlDashboard {
     grid.innerHTML = html;
   }
 
+  updateTodayButtonText() {
+    const overdueCount = this.tasks.filter(task =>
+      task.status !== "completed" && this.isTaskOverdue(task)
+    ).length;
+
+    const todayText = document.getElementById("todayViewText");
+    if (todayText) {
+      if (overdueCount > 0) {
+        todayText.textContent = `Today | Overdue (${overdueCount})`;
+      } else {
+        todayText.textContent = "Today";
+      }
+    }
+  }
+
   renderTasks() {
     const container = document.getElementById("todosContainer");
 
     if (!this.tasks || this.tasks.length === 0) {
       container.innerHTML = '<div class="no-data">No active missions</div>';
+      this.updateTodayButtonText();
       return;
     }
 
@@ -579,14 +595,43 @@ class MissionControlDashboard {
 
     container.innerHTML = sortedTasks
       .map(
-        (task) => `
-            <div class="todo-item priority-${task.priority}" onclick="showTaskDetails('${task.id}')">
+        (task) => {
+          const isOverdue = this.isTaskOverdue(task);
+          const daysOverdue = this.getDaysOverdue(task);
+          const overdueClass = isOverdue ? "overdue" : "";
+          const overdueText = isOverdue ? ` (${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue)` : "";
+
+          return `
+            <div class="todo-item priority-${task.priority} ${overdueClass}" onclick="showTaskDetails('${task.id}')">
                 <div class="todo-title">${this.escapeHtml(task.title)}</div>
-                <div class="todo-project">${task.project} • Due: ${this.formatDate(task.due)}</div>
+                <div class="todo-project">${task.project} • Due: ${this.formatDate(task.due)}${overdueText}</div>
             </div>
-        `,
+          `;
+        },
       )
       .join("");
+
+    // Update the Today button text with overdue count
+    this.updateTodayButtonText();
+  }
+
+  isTaskOverdue(task) {
+    if (!task.due) return false;
+    const dueDate = new Date(task.due);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    dueDate.setHours(0, 0, 0, 0); // Start of due date
+    return dueDate < today;
+  }
+
+  getDaysOverdue(task) {
+    if (!this.isTaskOverdue(task)) return 0;
+    const dueDate = new Date(task.due);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    dueDate.setHours(0, 0, 0, 0);
+    const diffTime = today - dueDate;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 
   formatDate(dateString) {
@@ -613,6 +658,34 @@ class MissionControlDashboard {
     const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  showToast(message, type = "success") {
+    const toast = document.getElementById("toast");
+    const messageElement = toast.querySelector(".toast-message");
+    const iconElement = toast.querySelector(".toast-icon");
+
+    // Update message
+    messageElement.textContent = message;
+
+    // Update icon and colors based on type
+    if (type === "success") {
+      iconElement.className = "toast-icon ti ti-check";
+      toast.style.borderColor = "var(--success)";
+      iconElement.style.color = "var(--success)";
+    } else if (type === "error") {
+      iconElement.className = "toast-icon ti ti-x";
+      toast.style.borderColor = "var(--danger)";
+      iconElement.style.color = "var(--danger)";
+    }
+
+    // Show toast
+    toast.classList.add("show");
+
+    // Hide after 3 seconds
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 3000);
   }
 
   renderWeatherForecast() {
@@ -765,7 +838,11 @@ class MissionControlDashboard {
   refreshData() {
     this.showRefreshIndicator();
     // Force refresh all data
-    this.loadAllData();
+    this.loadAllData().then(() => {
+      this.showToast("Data refreshed successfully", "success");
+    }).catch(() => {
+      this.showToast("Failed to refresh data", "error");
+    });
   }
 
   toggleScreen() {
@@ -1049,12 +1126,23 @@ window.closeModal = function(modalId) {
 
 // Weather modal functions
 window.showWeatherDetails = function() {
+  // Check if dashboard is initialized
+  if (!dashboard) {
+    console.warn("Dashboard not initialized yet");
+    return;
+  }
+
   if (!dashboard.weatherForecast) {
     console.warn("Weather forecast data not available");
     return;
   }
 
   const modal = document.getElementById("weatherModal");
+  if (!modal) {
+    console.error("Weather modal not found");
+    return;
+  }
+
   modal.classList.add("active");
 
   // Render the current view
@@ -1062,6 +1150,12 @@ window.showWeatherDetails = function() {
 }
 
 window.switchWeatherView = function(view) {
+  // Check if dashboard is initialized
+  if (!dashboard) {
+    console.warn("Dashboard not initialized yet");
+    return;
+  }
+
   dashboard.currentWeatherView = view;
 
   // Update active button
@@ -1078,6 +1172,19 @@ let dashboard;
 document.addEventListener("DOMContentLoaded", () => {
   dashboard = new MissionControlDashboard();
 });
+
+// Global functions for button handlers
+window.refreshData = function() {
+  if (dashboard) {
+    dashboard.refreshData();
+  }
+};
+
+window.toggleScreen = function() {
+  if (dashboard) {
+    dashboard.toggleScreen();
+  }
+};
 
 // Prevent context menu and zoom (optimized for Pi Touch Display 2)
 document.addEventListener("contextmenu", (e) => e.preventDefault());

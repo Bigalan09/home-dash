@@ -1,0 +1,1354 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap");
+
+/* Theme Contract - Custom Properties */
+:root {
+    /* Core colors - Modern Home Dashboard Palette */
+    --bg: #fafbfc;
+    --bg-elev: #ffffff;
+    --text: #1a202c;
+    --text-muted: #718096;
+    --accent: #4299e1;           /* Calming blue primary */
+    --accent-hover: #3182ce;     /* Darker blue hover */
+    --accent-weak: #bee3f8;      /* Light blue tint */
+    --secondary: #48bb78;        /* Fresh green secondary */
+    --border: #e2e8f0;
+    --focus: #4299e1;            /* Blue focus (same as accent) */
+    --success: #48bb78;          /* Green success */
+    --warning: #ed8936;          /* Warm orange warning */
+    --danger: #f56565;           /* Soft red danger */
+
+    /* Surfaces */
+    --card: #ffffff;
+    --hover: #f7f7f8;
+    --active: #f0f2f5;
+
+    /* Typography scale (keeping original ratios ±10%) */
+    --fs-xs: 0.75rem;
+    --fs-sm: 0.875rem;
+    --fs-md: 1rem;
+    --fs-lg: 1.125rem;
+    --fs-xl: 1.25rem;
+    --fs-xxl: 2.2rem;            /* Time display */
+
+    /* Borders & effects */
+    --border-thin: 1px;
+    --border-med: 2px;
+    --border-thick: 3px;
+    --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+    --shadow-md: 0 2px 8px rgba(16, 24, 40, 0.08);
+    --shadow-lg: 0 8px 32px rgba(16, 24, 40, 0.12);
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    /* Motions */
+    --easing: cubic-bezier(.2,.8,.2,1);
+    --dur-fast: 120ms;
+    --dur-med: 200ms;
+    --dur-slow: 300ms;
+
+    /* Priority colors */
+    --priority-1: var(--danger);   /* High - soft red */
+    --priority-2: var(--warning);  /* Medium - warm orange */
+    --priority-3: var(--accent);   /* Low - blue accent */
+    --priority-4: var(--text-muted); /* Lowest - muted grey */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    touch-action: manipulation;
+    user-select: none;
+    position: relative;
+    max-width: 1280px;
+    max-height: 720px;
+    margin: 0 auto;
+}
+
+/* Subtle static background pattern */
+body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(rgba(16, 24, 40, 0.01) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 24, 40, 0.01) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Removed gridMove animation for minimalist design */
+
+.dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 12px;
+    padding: 12px;
+    height: 100vh;
+    max-height: 690px;
+    width: 100%;
+    max-width: 1280px;
+    position: relative;
+    z-index: 1;
+    margin: 0 auto;
+}
+
+.header {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--card);
+    border: var(--border-thin) solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Removed scanning animation for minimalist design */
+
+/* Removed scan animation */
+
+.time-section {
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    flex: 1;
+}
+
+.time {
+    font-family: "Poppins", sans-serif;
+    font-size: var(--fs-xxl);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+    color: var(--accent);
+}
+
+.date {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.weather-section {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 2;
+}
+
+.weather-icon {
+    font-size: 1.5rem;
+}
+
+.weather-info {
+    text-align: right;
+}
+
+.temperature {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: var(--secondary);
+}
+
+.weather-desc {
+    font-size: 0.7rem;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.system-controls {
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    display: flex;
+    gap: 8px;
+    z-index: 2;
+}
+
+.system-btn {
+    background: var(--bg-elev);
+    border: var(--border-thin) solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    font-size: 1rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--dur-slow) var(--easing);
+    font-family: "Inter", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    min-width: 48px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+}
+
+.system-btn:hover {
+    background: var(--hover);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: var(--shadow-md);
+}
+
+.system-btn:active {
+    background: var(--accent-weak);
+    border-color: var(--accent);
+    transform: scale(0.96);
+}
+
+.system-btn:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
+.pagination {
+    margin: 4px auto 0 auto;
+    width: 5rem;
+    display: flex;
+    gap: 6px;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity var(--dur-slow) var(--easing);
+    pointer-events: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination.visible {
+    opacity: 1;
+}
+
+.pagination-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    border: var(--border-thin) solid var(--border);
+    transition: all var(--dur-slow) var(--easing);
+}
+
+.pagination-dot.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-weak);
+}
+
+.card {
+    background: var(--card);
+    border: var(--border-thin) solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Removed top scanning animation for minimalist design */
+
+/* Removed topScan animation */
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.card-title {
+    font-family: "Poppins", sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+}
+
+.card-icon {
+    font-size: 1rem;
+}
+
+.view-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.view-btn {
+    background: var(--bg-elev);
+    border: var(--border-thin) solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    font-family: "Poppins", sans-serif;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--dur-slow) var(--easing);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.view-btn:hover,
+.view-btn.active {
+    background: var(--accent-weak);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: var(--shadow-sm);
+}
+
+.view-btn:active {
+    background: var(--accent);
+    color: var(--bg);
+    transform: scale(0.96);
+}
+
+.view-btn:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
+.calendar-container,
+.todos-container {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: relative;
+}
+
+.calendar-container::-webkit-scrollbar,
+.todos-container::-webkit-scrollbar {
+    display: none;
+}
+
+.event,
+.todo-item {
+    background: var(--bg-elev);
+    border: var(--border-thin) solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    margin-bottom: 8px;
+    border-left: var(--border-thick) solid;
+    transition: all var(--dur-slow) var(--easing);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Simplified hover animations */
+.event:hover,
+.todo-item:hover {
+    background: var(--hover);
+    box-shadow: var(--shadow-md);
+}
+
+.event:focus-visible,
+.todo-item:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
+.event {
+    border-left-color: var(--accent);
+}
+
+.todo-item {
+    border-left-color: var(--priority-1);
+}
+
+.todo-item.completed {
+    opacity: 0.5;
+    border-left-color: var(--success);
+}
+
+.todo-item.priority-1 {
+    border-left-color: var(--priority-1);
+}
+.todo-item.priority-2 {
+    border-left-color: var(--priority-2);
+}
+.todo-item.priority-3 {
+    border-left-color: var(--priority-3);
+}
+.todo-item.priority-4 {
+    border-left-color: var(--priority-4);
+}
+
+/* Overdue task styling */
+.todo-item.overdue {
+    background: linear-gradient(
+        135deg,
+        rgba(245, 101, 101, 0.08) 0%,
+        rgba(245, 101, 101, 0.03) 100%
+    );
+    border-left-color: var(--danger);
+    border-left-width: 4px;
+}
+
+.todo-item.overdue .todo-project {
+    color: var(--danger);
+    font-weight: 500;
+}
+
+.todo-item.overdue:hover {
+    background: linear-gradient(
+        135deg,
+        rgba(245, 101, 101, 0.12) 0%,
+        rgba(245, 101, 101, 0.06) 100%
+    );
+}
+
+.event-title,
+.todo-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+    line-height: 1.3;
+    color: var(--text);
+}
+
+.event-time,
+.todo-project {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    font-family: "Inter", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+}
+
+.todo-item.completed .todo-title {
+    text-decoration: line-through;
+}
+
+.no-data {
+    text-align: center;
+    opacity: 0.6;
+    font-style: italic;
+    padding: 20px;
+    font-family: "Poppins", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.loading {
+    text-align: center;
+    opacity: 0.7;
+    padding: 20px;
+    font-family: "Poppins", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.4;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.4;
+    }
+}
+
+.refresh-indicator {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity var(--dur-slow) var(--easing);
+    box-shadow: 0 0 0 2px var(--accent-weak);
+    z-index: 1000;
+}
+
+.refresh-indicator.active {
+    opacity: 1;
+    animation: pulse 1s infinite;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: modalFadeIn var(--dur-slow) var(--easing);
+}
+
+.modal.active {
+    display: flex;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background: var(--card);
+    border: var(--border-med) solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    max-width: 90%;
+    max-height: 80%;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: var(--shadow-lg);
+    animation: modalSlideIn var(--dur-slow) var(--easing);
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: var(--border-thin) solid var(--border);
+}
+
+.modal-title {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all var(--dur-slow) var(--easing);
+    min-width: 32px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    background: var(--hover);
+    color: var(--danger);
+}
+
+.close-btn:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
+.modal-body {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text);
+}
+
+.modal-body p {
+    margin-bottom: 12px;
+}
+
+.modal-body .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: var(--border-thin) solid var(--border);
+}
+
+.modal-body .detail-label {
+    font-family: "Poppins", sans-serif;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+    color: var(--text-muted);
+}
+
+.modal-body .detail-value {
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* Calendar Views */
+.calendar-view {
+    display: none;
+}
+
+.calendar-view.active {
+    display: block;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 0 4px;
+}
+
+.month-nav {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all var(--dur-slow) var(--easing);
+    min-width: 32px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.month-nav:hover {
+    background: var(--hover);
+    box-shadow: var(--shadow-sm);
+}
+
+.month-nav:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
+.month-title {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    margin-bottom: 8px;
+    background: var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.weekday {
+    background: var(--bg-elev);
+    padding: 8px 4px;
+    text-align: center;
+    font-family: "Poppins", sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    width: 100%;
+}
+
+.calendar-day {
+    background: var(--card);
+    padding: 6px 4px;
+    min-height: 70px;
+    max-width: 100%;
+    position: relative;
+    transition: all var(--dur-slow) var(--easing);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.calendar-day:hover {
+    background: var(--hover);
+}
+
+.calendar-day:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: -2px;
+}
+
+.calendar-day.today {
+    background: var(--accent-weak);
+    border: var(--border-med) solid var(--accent);
+    border-radius: 4px;
+}
+
+.calendar-day.other-month {
+    opacity: 0.3;
+}
+
+.calendar-day.other-month .day-number {
+    color: var(--text-muted);
+}
+
+.day-number {
+    font-family: "Poppins", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text);
+    text-align: center;
+}
+
+.calendar-day.today .day-number {
+    color: var(--accent);
+    background: var(--card);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 4px auto;
+    font-weight: 700;
+    box-shadow: var(--shadow-sm);
+}
+
+.day-events {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    overflow: hidden;
+}
+
+.day-event {
+    background: var(--priority-1);
+    border-radius: 2px;
+    padding: 1px 3px;
+    font-size: 0.6rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: white;
+    font-weight: 500;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.day-event.priority-high {
+    background: var(--priority-1);
+}
+
+.day-event.priority-medium {
+    background: var(--priority-2);
+}
+
+.day-event.priority-low {
+    background: var(--accent);
+}
+
+.day-event.holiday {
+    background: var(--success);
+    color: white;
+}
+
+.event-overflow {
+    font-size: 0.5rem;
+    color: var(--accent);
+    font-family: "Poppins", sans-serif;
+    text-align: center;
+    margin-top: 2px;
+    font-weight: 600;
+}
+
+.daily-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Pi Touch Display 2 specific optimizations (720x1280) */
+@media (max-width: 720px) and (max-height: 1280px) {
+    body {
+        /* Ensure exact fit for Pi display */
+        max-width: 720px;
+        max-height: 1280px;
+    }
+
+    .dashboard {
+        /* Optimize grid for Pi portrait orientation */
+        gap: 10px;
+        padding: 10px;
+        grid-template-rows: auto 1fr 1fr;
+    }
+
+    /* Increase touch target sizes for better Pi touch interaction */
+    .system-btn {
+        min-width: 52px;
+        min-height: 52px;
+        padding: 12px 14px;
+        font-size: 1.1rem;
+    }
+
+    .view-btn {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 8px 12px;
+        font-size: 0.75rem;
+    }
+
+    .month-nav {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 1.4rem;
+    }
+
+    /* Optimize calendar grid for Pi display */
+    .calendar-day {
+        min-height: 85px;
+        padding: 8px 6px;
+    }
+
+    .day-number {
+        font-size: 1rem;
+    }
+
+    /* Larger modal content for touch interaction */
+    .modal-content {
+        padding: 28px;
+        max-width: 680px;
+        margin: 20px;
+    }
+
+    .close-btn {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 1.8rem;
+    }
+
+    /* Ensure all touch targets meet minimum 44px requirement */
+    .event,
+    .todo-item {
+        min-height: 60px;
+        padding: 16px;
+    }
+
+    .calendar-day {
+        cursor: pointer;
+        transition: all var(--dur-med) var(--easing);
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto;
+    }
+
+    .time {
+        font-size: 1.8rem;
+    }
+
+    .temperature {
+        font-size: 1.4rem;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+
+    .weather-section {
+        position: relative;
+        top: auto;
+        right: auto;
+        justify-content: center;
+    }
+
+    .system-controls {
+        position: relative;
+        top: auto;
+        left: auto;
+        justify-content: center;
+    }
+
+    .modal-content {
+        max-width: 95%;
+        margin: 10px;
+    }
+}
+
+@media (max-width: 600px) {
+    .weather-section {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin-top: 8px;
+        justify-content: center;
+    }
+
+    .system-controls {
+        position: relative;
+        top: auto;
+        left: auto;
+        justify-content: center;
+        order: -1;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+
+    .time-section {
+        order: 1;
+    }
+
+    .weather-section {
+        order: 2;
+    }
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    opacity: 0;
+    transition: opacity var(--dur-med) var(--easing);
+}
+
+.todo-item:hover .action-buttons,
+.day-event:hover .action-buttons {
+    opacity: 1;
+}
+
+.action-btn {
+    background: var(--bg-elev);
+    border: var(--border-thin) solid var(--border);
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all var(--dur-med) var(--easing);
+    font-family: "Inter", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    background: var(--hover);
+    border-color: var(--accent);
+}
+
+.action-btn:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
+.action-btn.complete {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.action-btn.complete:hover {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: var(--success);
+}
+
+.action-btn.dismiss {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: var(--warning);
+    color: var(--warning);
+}
+
+.action-btn.dismiss:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: var(--warning);
+}
+
+.action-btn.processing {
+    opacity: 0.5;
+    cursor: not-allowed;
+    animation: pulse 1s infinite;
+}
+
+/* Show action buttons on touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .action-buttons {
+        opacity: 1;
+    }
+}
+
+/* Weather Modal Styles */
+.weather-section {
+    cursor: pointer;
+    transition: all var(--dur-slow) var(--easing);
+}
+
+.weather-section:hover {
+    opacity: 0.8;
+}
+
+.weather-view-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.weather-view-controls .view-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 100px;
+    justify-content: center;
+}
+
+.forecast-grid {
+    display: grid;
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.forecast-grid::-webkit-scrollbar {
+    display: none;
+}
+
+.hourly-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.daily-grid {
+    grid-template-columns: 1fr;
+}
+
+.forecast-item {
+    background: var(--bg-elev);
+    border: var(--border-thin) solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    text-align: center;
+    transition: all var(--dur-slow) var(--easing);
+    position: relative;
+    overflow: hidden;
+}
+
+.forecast-item.current {
+    border-color: var(--accent);
+    background: var(--accent-weak);
+    box-shadow: var(--shadow-md);
+}
+
+/* Simplified forecast item hover */
+.forecast-item:hover {
+    background: var(--hover);
+    box-shadow: var(--shadow-md);
+}
+
+.forecast-time {
+    font-family: "Poppins", sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.forecast-day {
+    margin-bottom: 8px;
+}
+
+.day-name {
+    font-family: "Poppins", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.day-date {
+    font-size: 0.7rem;
+    opacity: 0.8;
+    margin-top: 2px;
+    color: var(--text-muted);
+}
+
+.forecast-icon {
+    font-size: 2rem;
+    margin: 8px 0;
+}
+
+.forecast-temp {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--success);
+    margin: 8px 0;
+}
+
+.forecast-temps {
+    margin: 8px 0;
+}
+
+.temp-high {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--success);
+}
+
+.temp-low {
+    font-family: "Poppins", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--accent);
+    opacity: 0.8;
+    margin-top: 4px;
+}
+
+.forecast-desc {
+    font-size: 0.7rem;
+    opacity: 0.8;
+    margin: 8px 0;
+    text-transform: capitalize;
+    line-height: 1.3;
+    color: var(--text-muted);
+}
+
+.forecast-details {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: var(--border-thin) solid var(--border);
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    opacity: 0.8;
+    color: var(--text-muted);
+}
+
+.detail-item i {
+    font-size: 0.8rem;
+    color: var(--accent);
+}
+
+/* Touch optimizations for Pi display */
+@media (max-width: 720px) and (max-height: 1280px) {
+    .weather-view-controls .view-btn {
+        min-height: 44px;
+        min-width: 120px;
+        padding: 12px 16px;
+        font-size: 0.8rem;
+    }
+
+    .forecast-item {
+        min-height: 120px;
+        padding: 20px 16px;
+    }
+
+    .forecast-icon {
+        font-size: 2.5rem;
+    }
+
+    .forecast-temp,
+    .temp-high {
+        font-size: 1.2rem;
+    }
+
+    .hourly-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .forecast-grid {
+        max-height: 500px;
+    }
+}
+
+/* Toast Notification System */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--card);
+    border: var(--border-thin) solid var(--success);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    box-shadow: var(--shadow-lg);
+    z-index: 3000;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all var(--dur-slow) var(--easing);
+    max-width: 300px;
+    backdrop-filter: blur(10px);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toast-icon {
+    color: var(--success);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.toast-message {
+    font-family: "Inter", sans-serif;
+    font-size: 0.9rem;
+    color: var(--text);
+    font-weight: 500;
+}
+
+/* Enhanced button active states */
+.month-nav:active {
+    background: var(--accent-weak);
+    transform: scale(0.96);
+}
+
+.close-btn:active {
+    background: var(--hover);
+    transform: scale(0.96);
+}
+
+.action-btn:active {
+    background: var(--accent-weak);
+    border-color: var(--accent);
+    transform: scale(0.96);
+}
+
+.calendar-day:active {
+    background: var(--accent-weak);
+    transform: scale(0.98);
+}
+
+.event:active,
+.todo-item:active {
+    background: var(--accent-weak);
+    transform: scale(0.98);
+}
+
+.forecast-item:active {
+    background: var(--accent-weak);
+    transform: scale(0.98);
+}
+
+/* Toast optimizations for Pi Touch Display */
+@media (max-width: 720px) and (max-height: 1280px) {
+    .toast {
+        top: 80px; /* Below the header */
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        text-align: center;
+    }
+
+    .toast-content {
+        justify-content: center;
+    }
+
+    .toast-message {
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .toast-icon {
+        font-size: 1.2rem;
+    }
+}
