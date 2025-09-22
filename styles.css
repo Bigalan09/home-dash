@@ -16,9 +16,8 @@ body {
     touch-action: manipulation;
     user-select: none;
     position: relative;
-    /* Optimized for Pi Touch Display 2: 720x1280 portrait */
     max-width: 1280px;
-    max-height: 720px;
+    max-height: 710px;
     margin: 0 auto;
 }
 
@@ -51,13 +50,13 @@ body::before {
 .dashboard {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto 1fr 1fr;
+    grid-template-rows: auto 1fr;
     gap: 12px;
     padding: 12px;
     height: 100vh;
-    max-height: 1280px;
+    max-height: 690px;
     width: 100%;
-    max-width: 720px;
+    max-width: 1280px;
     position: relative;
     z-index: 1;
     margin: 0 auto;
@@ -209,16 +208,16 @@ body::before {
 }
 
 .pagination {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    margin: 8px auto 0 auto;
+    width: 10rem;
     display: flex;
-    gap: 8px;
+    gap: 6px;
     z-index: 1000;
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
+    align-items: center;
+    justify-content: center;
 }
 
 .pagination.visible {
