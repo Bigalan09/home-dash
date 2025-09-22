@@ -17,7 +17,7 @@ body {
     user-select: none;
     position: relative;
     max-width: 1280px;
-    max-height: 710px;
+    max-height: 720px;
     margin: 0 auto;
 }
 
@@ -184,9 +184,9 @@ body::before {
 .system-btn {
     background: rgba(0, 20, 40, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding: 6px 8px;
-    font-size: 0.7rem;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 1rem;
     color: rgba(255, 255, 255, 0.6);
     cursor: pointer;
     transition: all 0.3s ease;
@@ -194,6 +194,11 @@ body::before {
     font-family: "Orbitron", monospace;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    min-width: 48px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .system-btn:hover {
@@ -208,8 +213,8 @@ body::before {
 }
 
 .pagination {
-    margin: 8px auto 0 auto;
-    width: 10rem;
+    margin: 4px auto 0 auto;
+    width: 5rem;
     display: flex;
     gap: 6px;
     z-index: 1000;
@@ -813,10 +818,10 @@ body::before {
 
     /* Increase touch target sizes for better Pi touch interaction */
     .system-btn {
-        min-width: 44px;
-        min-height: 44px;
-        padding: 8px 12px;
-        font-size: 0.8rem;
+        min-width: 52px;
+        min-height: 52px;
+        padding: 12px 14px;
+        font-size: 1.1rem;
     }
 
     .view-btn {

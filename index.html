@@ -21,14 +21,14 @@
                         onclick="dashboard.refreshData()"
                         title="Refresh Data"
                     >
-                        ⟳
+                        <i class="ti ti-refresh"></i>
                     </button>
                     <button
                         class="system-btn"
                         onclick="dashboard.toggleScreen()"
                         title="Screen Off"
                     >
-                        ⏻
+                        <i class="ti ti-power"></i>
                     </button>
                 </div>
                 <div class="time-section">
@@ -49,15 +49,15 @@
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">
-                        <span class="card-icon">📅</span>
+                        <i class="ti ti-calendar card-icon"></i>
                         Calendar
                     </div>
                     <div class="view-controls">
-                        <button class="view-btn" data-view="daily">Day</button>
+                        <button class="view-btn active" data-view="daily">Day</button>
                         <button class="view-btn" data-view="weekly">
                             Week
                         </button>
-                        <button class="view-btn active" data-view="monthly">
+                        <button class="view-btn" data-view="monthly">
                             Month
                         </button>
                     </div>
@@ -75,14 +75,14 @@
                                 class="month-nav"
                                 onclick="dashboard.navigateWeek(-1)"
                             >
-                                ‹
+                                <i class="ti ti-chevron-left"></i>
                             </button>
                             <div class="month-title" id="weekTitle">Week</div>
                             <button
                                 class="month-nav"
                                 onclick="dashboard.navigateWeek(1)"
                             >
-                                ›
+                                <i class="ti ti-chevron-right"></i>
                             </button>
                         </div>
                         <div class="weekdays">
@@ -105,7 +105,7 @@
                                 class="month-nav"
                                 onclick="dashboard.navigateMonth(-1)"
                             >
-                                ‹
+                                <i class="ti ti-chevron-left"></i>
                             </button>
                             <div class="month-title" id="monthTitle">
                                 September 2025
@@ -114,7 +114,7 @@
                                 class="month-nav"
                                 onclick="dashboard.navigateMonth(1)"
                             >
-                                ›
+                                <i class="ti ti-chevron-right"></i>
                             </button>
                         </div>
                         <div class="weekdays">
@@ -134,8 +134,18 @@
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">
-                        <span class="card-icon">⚡</span>
-                        Upcoming Tasks
+                        <i class="ti ti-checklist card-icon"></i>
+                        Tasks
+                    </div>
+                    <div class="view-controls">
+                        <button class="view-btn active" data-task-view="today">
+                            <i class="ti ti-calendar-today"></i>
+                            Today
+                        </button>
+                        <button class="view-btn" data-task-view="upcoming">
+                            <i class="ti ti-calendar-week"></i>
+                            Upcoming
+                        </button>
                     </div>
                 </div>
                 <div class="todos-container" id="todosContainer">
@@ -162,7 +172,7 @@
                         class="close-btn"
                         onclick="closeModal('eventModal')"
                     >
-                        &times;
+                        <i class="ti ti-x"></i>
                     </button>
                 </div>
                 <div class="modal-body" id="eventModalBody">
@@ -176,7 +186,7 @@
                 <div class="modal-header">
                     <div class="modal-title">Task Details</div>
                     <button class="close-btn" onclick="closeModal('taskModal')">
-                        &times;
+                        <i class="ti ti-x"></i>
                     </button>
                 </div>
                 <div class="modal-body" id="taskModalBody">
@@ -192,15 +202,15 @@
                         <i class="ti ti-cloud"></i> Weather Forecast
                     </div>
                     <button class="close-btn" onclick="closeModal('weatherModal')">
-                        &times;
+                        <i class="ti ti-x"></i>
                     </button>
                 </div>
                 <div class="modal-body" id="weatherModalBody">
                     <div class="weather-view-controls">
-                        <button class="view-btn active" data-view="hourly" onclick="switchWeatherView('hourly')">
+                        <button class="view-btn" data-view="hourly" onclick="switchWeatherView('hourly')">
                             <i class="ti ti-clock"></i> Hourly
                         </button>
-                        <button class="view-btn" data-view="daily" onclick="switchWeatherView('daily')">
+                        <button class="view-btn active" data-view="daily" onclick="switchWeatherView('daily')">
                             <i class="ti ti-calendar"></i> 5-Day
                         </button>
                     </div>

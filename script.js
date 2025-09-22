@@ -16,13 +16,14 @@ const FALLBACK_MESSAGE =
 
 class MissionControlDashboard {
   constructor() {
-    this.currentView = "monthly"; // Default to monthly view for 7" portrait
+    this.currentView = "daily"; // Default to daily view
     this.currentDate = new Date();
     this.currentWeekStart = new Date();
     this.events = [];
     this.tasks = [];
     this.weatherForecast = null;
-    this.currentWeatherView = "hourly";
+    this.currentWeatherView = "daily";
+    this.currentTaskView = "today"; // Default task view
     this.lastActivity = Date.now();
     this.serverTimeOffset = 0; // Time offset from server
 
@@ -325,10 +326,18 @@ class MissionControlDashboard {
 
   setupEventListeners() {
     // Calendar view switching
-    document.querySelectorAll(".view-btn").forEach((btn) => {
+    document.querySelectorAll(".view-btn[data-view]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const view = btn.dataset.view;
         this.switchCalendarView(view);
+      });
+    });
+
+    // Task view switching
+    document.querySelectorAll(".view-btn[data-task-view]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const taskView = btn.dataset.taskView;
+        this.switchTaskView(taskView);
       });
     });
 
@@ -345,8 +354,8 @@ class MissionControlDashboard {
   switchCalendarView(view) {
     this.currentView = view;
 
-    // Update active button
-    document.querySelectorAll(".view-btn").forEach((btn) => {
+    // Update active button for calendar views only
+    document.querySelectorAll(".view-btn[data-view]").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.view === view);
     });
 
@@ -368,6 +377,18 @@ class MissionControlDashboard {
     }
   }
 
+  switchTaskView(taskView) {
+    this.currentTaskView = taskView;
+
+    // Update active button for task views only
+    document.querySelectorAll(".view-btn[data-task-view]").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.taskView === taskView);
+    });
+
+    // Re-render tasks with new filter
+    this.renderTasks();
+  }
+
   navigateMonth(direction) {
     this.currentDate.setMonth(this.currentDate.getMonth() + direction);
     this.renderMonthlyView();
@@ -381,9 +402,9 @@ class MissionControlDashboard {
   }
 
   initializeCalendarViews() {
-    this.renderMonthlyView(); // Start with monthly view
+    this.renderDailyView(); // Start with daily view
     this.renderWeeklyView();
-    this.renderDailyView();
+    this.renderMonthlyView();
   }
 
   renderDailyView() {
@@ -516,14 +537,45 @@ class MissionControlDashboard {
       return;
     }
 
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0];
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split("T")[0];
+    const weekFromToday = new Date(today);
+    weekFromToday.setDate(weekFromToday.getDate() + 7);
+
+    // Filter tasks based on current view
+    let filteredTasks = this.tasks.filter((task) => task.status !== "completed");
+
+    if (this.currentTaskView === "today") {
+      // Today view: show today's tasks and overdue tasks
+      filteredTasks = filteredTasks.filter((task) => {
+        const taskDate = new Date(task.due).toISOString().split("T")[0];
+        const taskDueDate = new Date(task.due);
+        return taskDate === todayStr || taskDueDate < today;
+      });
+    } else if (this.currentTaskView === "upcoming") {
+      // Upcoming view: show tomorrow's tasks and this week's tasks
+      filteredTasks = filteredTasks.filter((task) => {
+        const taskDueDate = new Date(task.due);
+        return taskDueDate >= tomorrow && taskDueDate <= weekFromToday;
+      });
+    }
+
     // Sort by priority and due date
-    const sortedTasks = this.tasks
-      .filter((task) => task.status !== "completed")
+    const sortedTasks = filteredTasks
       .sort((a, b) => {
         if (a.priority !== b.priority) return a.priority - b.priority;
         return new Date(a.due) - new Date(b.due);
       })
       .slice(0, 8);
+
+    if (sortedTasks.length === 0) {
+      const viewName = this.currentTaskView === "today" ? "today" : "upcoming";
+      container.innerHTML = `<div class="no-data">No ${viewName} missions</div>`;
+      return;
+    }
 
     container.innerHTML = sortedTasks
       .map(
