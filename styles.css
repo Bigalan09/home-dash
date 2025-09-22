@@ -17,8 +17,8 @@ body {
     user-select: none;
     position: relative;
     /* Optimized for Pi Touch Display 2: 720x1280 portrait */
-    max-width: 720px;
-    max-height: 1280px;
+    max-width: 1280px;
+    max-height: 720px;
     margin: 0 auto;
 }
 
