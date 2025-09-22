@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=720, height=1280, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mission Control Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="refresh-indicator" id="refreshIndicator"></div>
+
+    <div class="dashboard">
+        <header class="header">
+            <div class="system-controls">
+                <button class="system-btn" onclick="dashboard.refreshData()" title="Refresh Data">⟳</button>
+                <button class="system-btn" onclick="dashboard.toggleScreen()" title="Screen Off">⏻</button>
+            </div>
+            <div class="time-section">
+                <div class="time" id="time">--:--:--</div>
+                <div class="date" id="date">Loading...</div>
+            </div>
+            <div class="weather-section">
+                <div class="weather-icon" id="weatherIcon">🌤️</div>
+                <div class="weather-info">
+                    <div class="temperature" id="temperature">18°C</div>
+                    <div class="weather-desc" id="weatherDesc">Partly Cloudy</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="card-icon">📅</span>
+                    Mission Calendar
+                </div>
+                <div class="view-controls">
+                    <button class="view-btn" data-view="daily">Day</button>
+                    <button class="view-btn" data-view="weekly">Week</button>
+                    <button class="view-btn active" data-view="monthly">Month</button>
+                </div>
+            </div>
+            <div class="calendar-container" id="calendarContainer">
+                <div class="calendar-view calendar-daily active" id="dailyView">
+                    <div class="daily-list" id="dailyEvents"></div>
+                </div>
+                <div class="calendar-view calendar-weekly" id="weeklyView">
+                    <div class="calendar-header">
+                        <button class="month-nav" onclick="dashboard.navigateWeek(-1)">‹</button>
+                        <div class="month-title" id="weekTitle">Week</div>
+                        <button class="month-nav" onclick="dashboard.navigateWeek(1)">›</button>
+                    </div>
+                    <div class="weekdays">
+                        <div class="weekday">Mon</div>
+                        <div class="weekday">Tue</div>
+                        <div class="weekday">Wed</div>
+                        <div class="weekday">Thu</div>
+                        <div class="weekday">Fri</div>
+                        <div class="weekday">Sat</div>
+                        <div class="weekday">Sun</div>
+                    </div>
+                    <div class="calendar-grid" id="weeklyGrid"></div>
+                </div>
+                <div class="calendar-view calendar-monthly" id="monthlyView">
+                    <div class="calendar-header">
+                        <button class="month-nav" onclick="dashboard.navigateMonth(-1)">‹</button>
+                        <div class="month-title" id="monthTitle">September 2025</div>
+                        <button class="month-nav" onclick="dashboard.navigateMonth(1)">›</button>
+                    </div>
+                    <div class="weekdays">
+                        <div class="weekday">Mon</div>
+                        <div class="weekday">Tue</div>
+                        <div class="weekday">Wed</div>
+                        <div class="weekday">Thu</div>
+                        <div class="weekday">Fri</div>
+                        <div class="weekday">Sat</div>
+                        <div class="weekday">Sun</div>
+                    </div>
+                    <div class="calendar-grid" id="monthlyGrid"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="card-icon">⚡</span>
+                    Mission Tasks
+                </div>
+            </div>
+            <div class="todos-container" id="todosContainer">
+                <div class="loading pulse">Initialising task systems...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination indicator -->
+    <div class="pagination" id="pagination">
+        <div class="pagination-dot active"></div>
+        <div class="pagination-dot"></div>
+        <div class="pagination-dot"></div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Event Details</div>
+                <button class="close-btn" onclick="closeModal('eventModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="eventModalBody">
+                <!-- Event details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Task Details</div>
+                <button class="close-btn" onclick="closeModal('taskModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="taskModalBody">
+                <!-- Task details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

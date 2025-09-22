@@ -1,0 +1,28 @@
+{
+  "name": "home-dashboard",
+  "version": "1.0.0",
+  "description": "Mission Control Home Dashboard for Pi Touch Display 2",
+  "scripts": {
+    "dev": "bun --hot server.ts",
+    "start": "bun server.ts",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "keywords": [
+    "dashboard",
+    "raspberry-pi",
+    "touch-display",
+    "home-automation",
+    "mission-control"
+  ],
+  "author": "Home Dashboard",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.55.0"
+  }
+}

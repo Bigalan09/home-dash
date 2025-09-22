@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Node modules
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Documentation
+README.md
+CLAUDE.md
+*.md
+
+# Development files
+.vscode
+.idea
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Docker files (except for build context)
+docker-compose.yml
+Dockerfile
+
+
+# Static files (served by nginx)
+index.html
+styles.css
+script.js
+nginx.conf

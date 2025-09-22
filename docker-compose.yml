@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # Nginx web server for static files
+  web:
+    image: nginx:alpine
+    container_name: homedashboard-web
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./styles.css:/usr/share/nginx/html/styles.css:ro
+      - ./script.js:/usr/share/nginx/html/script.js:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - dashboard-network
+    labels:
+      - "com.homedashboard.service=web"
+      - "com.homedashboard.description=Static file server for Pi Touch Display 2"
+
+  # API backend service
+  api:
+    build: .
+    container_name: homedashboard-api
+    environment:
+      # Pass through all environment variables from .env
+      - TODOIST_API_KEY=${TODOIST_API_KEY:-}
+      - TODOIST_BASE_URL=${TODOIST_BASE_URL:-https://api.todoist.com/rest/v2}
+      - APPLE_CALENDAR_URL=${APPLE_CALENDAR_URL:-}
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-}
+      - WEATHER_LOCATION=${WEATHER_LOCATION:-London,GB}
+      - WEATHER_UNITS=${WEATHER_UNITS:-metric}
+      - TIME_API_URL=${TIME_API_URL:-http://worldtimeapi.org/api/timezone/Europe/London}
+      - PORT=3001
+      - NODE_ENV=${NODE_ENV:-production}
+    expose:
+      - "3001"
+    restart: unless-stopped
+    networks:
+      - dashboard-network
+    labels:
+      - "com.homedashboard.service=api"
+      - "com.homedashboard.description=API backend for dashboard integrations"
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/time"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  dashboard-network:
+    driver: bridge
+    name: homedashboard-network
+
+# Optional: Add volumes for persistent data if needed in the future
+volumes:
+  dashboard-data:
+    driver: local
+    labels:
+      - "com.homedashboard.volume=data"
