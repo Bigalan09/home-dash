@@ -507,7 +507,7 @@ async function handleWeatherForecast(req: Request): Promise<Response> {
           current: forecastData.list[0],
           hourly: forecastData.list.slice(0, 24), // First 24 hours
           daily: groupForecastByDay(forecastData.list),
-          api_version: "2.5-forecast"
+          api_version: "2.5-forecast",
         };
       }
     }
@@ -530,7 +530,9 @@ async function handleWeatherForecast(req: Request): Promise<Response> {
         ...data,
         cached: false,
         fetch_time: new Date().toISOString(),
-        api_version: data.api_version || (data.hourly && data.daily ? "one-call" : "standard"),
+        api_version:
+          data.api_version ||
+          (data.hourly && data.daily ? "one-call" : "standard"),
       }),
       {
         headers: {
@@ -622,16 +624,27 @@ function parseICSData(icsData: string, sourceName: string = "Unknown"): any[] {
       currentEvent = {};
     } else if (trimmedLine === "END:VEVENT" && currentEvent) {
       if (currentEvent.summary && currentEvent.dtstart) {
+        // Check if this is an all-day event
+        const isAllDay =
+          currentEvent.dtstartType === "DATE" ||
+          (!currentEvent.dtstart.includes("T") &&
+            currentEvent.dtstart.length === 8);
+
         events.push({
           id: currentEvent.uid || Date.now().toString(),
           title: currentEvent.summary,
           date: formatICSDate(currentEvent.dtstart),
-          time: formatICSTime(currentEvent.dtstart),
-          duration: calculateDuration(currentEvent.dtstart, currentEvent.dtend),
+          time: isAllDay ? "All day" : formatICSTime(currentEvent.dtstart),
+          duration: calculateDuration(
+            currentEvent.dtstart,
+            currentEvent.dtend,
+            isAllDay,
+          ),
           description: currentEvent.description || "",
           location: currentEvent.location || "",
           priority: "medium",
           source: sourceName,
+          isAllDay: isAllDay,
         });
       }
       currentEvent = null;
@@ -644,12 +657,20 @@ function parseICSData(icsData: string, sourceName: string = "Unknown"): any[] {
           currentEvent.summary = value;
           break;
         case "DTSTART":
+          currentEvent.dtstart = value;
+          currentEvent.dtstartType = "DATETIME";
+          break;
         case "DTSTART;VALUE=DATE":
           currentEvent.dtstart = value;
+          currentEvent.dtstartType = "DATE";
           break;
         case "DTEND":
+          currentEvent.dtend = value;
+          currentEvent.dtendType = "DATETIME";
+          break;
         case "DTEND;VALUE=DATE":
           currentEvent.dtend = value;
+          currentEvent.dtendType = "DATE";
           break;
         case "DESCRIPTION":
           currentEvent.description = value;
@@ -671,33 +692,36 @@ function parseICSData(icsData: string, sourceName: string = "Unknown"): any[] {
 function groupForecastByDay(forecastList: any[]): any[] {
   const dailyData: { [key: string]: any[] } = {};
 
-  forecastList.forEach(item => {
-    const date = new Date(item.dt * 1000).toISOString().split('T')[0];
+  forecastList.forEach((item) => {
+    const date = new Date(item.dt * 1000).toISOString().split("T")[0];
     if (!dailyData[date]) {
       dailyData[date] = [];
     }
     dailyData[date].push(item);
   });
 
-  return Object.entries(dailyData).slice(0, 5).map(([date, items]) => {
-    // Get mid-day item for daily summary or first item if no mid-day available
-    const midDayItem = items.find(item => {
-      const hour = new Date(item.dt * 1000).getHours();
-      return hour >= 11 && hour <= 15;
-    }) || items[0];
+  return Object.entries(dailyData)
+    .slice(0, 5)
+    .map(([date, items]) => {
+      // Get mid-day item for daily summary or first item if no mid-day available
+      const midDayItem =
+        items.find((item) => {
+          const hour = new Date(item.dt * 1000).getHours();
+          return hour >= 11 && hour <= 15;
+        }) || items[0];
 
-    return {
-      dt: midDayItem.dt,
-      temp: {
-        day: midDayItem.main.temp,
-        min: Math.min(...items.map(i => i.main.temp_min)),
-        max: Math.max(...items.map(i => i.main.temp_max)),
-      },
-      weather: midDayItem.weather,
-      humidity: midDayItem.main.humidity,
-      wind_speed: midDayItem.wind?.speed || 0,
-    };
-  });
+      return {
+        dt: midDayItem.dt,
+        temp: {
+          day: midDayItem.main.temp,
+          min: Math.min(...items.map((i) => i.main.temp_min)),
+          max: Math.max(...items.map((i) => i.main.temp_max)),
+        },
+        weather: midDayItem.weather,
+        humidity: midDayItem.main.humidity,
+        wind_speed: midDayItem.wind?.speed || 0,
+      };
+    });
 }
 
 function formatICSDate(icsDate: string): string {
@@ -723,43 +747,94 @@ function formatICSDate(icsDate: string): string {
 }
 
 function formatICSTime(icsDate: string): string {
-  if (!icsDate || !icsDate.includes("T")) return "00:00";
+  if (!icsDate) return "00:00";
 
-  const timePart = icsDate.split("T")[1];
+  // Handle UTC timezone indicator
+  let cleanDate = icsDate.replace("Z", "");
+
+  // If no time component, return default
+  if (!cleanDate.includes("T")) return "00:00";
+
+  const timePart = cleanDate.split("T")[1];
   if (timePart && timePart.length >= 4) {
     const hours = timePart.substring(0, 2);
     const minutes = timePart.substring(2, 4);
+
+    // Convert to 12-hour format if preferred, or keep 24-hour
+    const hour24 = parseInt(hours, 10);
+    const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+    const ampm = hour24 >= 12 ? "PM" : "AM";
+
+    // Return 24-hour format for consistency with dashboard theme
     return `${hours}:${minutes}`;
   }
 
   return "00:00";
 }
 
-function calculateDuration(start: string, end: string): string {
-  if (!start || !end) return "1 hour";
+function calculateDuration(
+  start: string,
+  end: string,
+  isAllDay: boolean = false,
+): string {
+  if (!start) return isAllDay ? "All day" : "1 hour";
+  if (!end) return isAllDay ? "All day" : "1 hour";
+
+  if (isAllDay) return "All day";
 
   try {
-    const startTime = new Date(
-      start.replace(
-        /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/,
-        "$1-$2-$3T$4:$5:$6",
-      ),
-    );
-    const endTime = new Date(
-      end.replace(
-        /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/,
-        "$1-$2-$3T$4:$5:$6",
-      ),
-    );
+    // Handle both date-only and datetime formats
+    let startTime: Date;
+    let endTime: Date;
+
+    if (start.includes("T")) {
+      // DateTime format: YYYYMMDDTHHMMSS
+      startTime = new Date(
+        start.replace(
+          /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/,
+          "$1-$2-$3T$4:$5:$6",
+        ),
+      );
+    } else {
+      // Date-only format: YYYYMMDD
+      startTime = new Date(start.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3"));
+    }
+
+    if (end.includes("T")) {
+      // DateTime format: YYYYMMDDTHHMMSS
+      endTime = new Date(
+        end.replace(
+          /(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/,
+          "$1-$2-$3T$4:$5:$6",
+        ),
+      );
+    } else {
+      // Date-only format: YYYYMMDD
+      endTime = new Date(end.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3"));
+    }
 
     const diffMs = endTime.getTime() - startTime.getTime();
-    const diffHours = Math.round(diffMs / (1000 * 60 * 60));
 
-    return diffHours > 0
-      ? `${diffHours} hour${diffHours !== 1 ? "s" : ""}`
-      : "1 hour";
-  } catch {
+    if (diffMs <= 0) return "1 hour";
+
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays > 0) {
+      return `${diffDays} day${diffDays !== 1 ? "s" : ""}`;
+    }
+
+    const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.round(diffMs / (1000 * 60));
+
+    if (diffHours > 0) {
+      return `${diffHours} hour${diffHours !== 1 ? "s" : ""}`;
+    } else if (diffMinutes > 0) {
+      return `${diffMinutes} minute${diffMinutes !== 1 ? "s" : ""}`;
+    }
+
     return "1 hour";
+  } catch (error) {
+    console.error("Error calculating duration:", error);
+    return isAllDay ? "All day" : "1 hour";
   }
 }
 
