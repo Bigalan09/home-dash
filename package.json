@@ -23,6 +23,7 @@
   "author": "Home Dashboard",
   "license": "MIT",
   "dependencies": {
+    "@playwright/test": "^1.55.0",
     "playwright": "^1.55.0"
   }
 }
