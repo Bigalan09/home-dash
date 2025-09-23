@@ -101,7 +101,6 @@ services:
 networks:
   dashboard-network:
     driver: bridge
-    name: homedashboard-network
 
 volumes:
   dashboard-data:
