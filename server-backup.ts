@@ -1,7 +1,6 @@
-// server-redis.ts - Enhanced server with Redis caching
+// server.ts
 
 import { file } from "bun";
-import Redis from "ioredis";
 
 // Load environment variables
 const env = {
@@ -22,129 +21,17 @@ const env = {
     process.env.TIME_API_URL ||
     "http://worldtimeapi.org/api/timezone/Europe/London",
   PORT: process.env.PORT || 3000,
-  REDIS_URL: process.env.REDIS_URL || "redis://localhost:6379",
 };
 
-// Redis client setup
-let redis: Redis | null = null;
-
-async function initRedis() {
-  try {
-    redis = new Redis(env.REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      retryStrategy: (times) => {
-        const delay = Math.min(times * 50, 2000);
-        console.log(`Redis connection retry #${times}, waiting ${delay}ms`);
-        return delay;
-      },
-      reconnectOnError: (err) => {
-        console.log(`Redis reconnect on error: ${err.message}`);
-        return true;
-      },
-    });
-
-    redis.on("error", (err) => {
-      console.error("Redis error:", err);
-    });
-
-    redis.on("connect", () => {
-      console.log("✅ Redis connected successfully");
-    });
-
-    // Test connection
-    await redis.ping();
-    return true;
-  } catch (error) {
-    console.error("Failed to connect to Redis, falling back to in-memory cache:", error);
-    redis = null;
-    return false;
-  }
+// Weather cache to limit API calls (30 minute cache)
+interface WeatherCache {
+  data: any;
+  timestamp: number;
 }
 
-// Initialize Redis on startup
-initRedis();
-
-// Cache configuration
-const CACHE_DURATIONS = {
-  WEATHER: 60 * 60,        // 1 hour in seconds
-  FORECAST: 60 * 60,       // 1 hour in seconds
-  CALENDAR: 30 * 60,       // 30 minutes in seconds
-  TASKS: 15 * 60,          // 15 minutes in seconds
-  TIME: 5 * 60,            // 5 minutes in seconds
-};
-
-// Fallback in-memory cache for when Redis is unavailable
-const memoryCache = new Map<string, { data: any; timestamp: number }>();
-const MEMORY_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
-
-// Cache helper functions
-async function getCached(key: string): Promise<any | null> {
-  // Try Redis first
-  if (redis) {
-    try {
-      const cached = await redis.get(key);
-      if (cached) {
-        console.log(`Cache HIT (Redis): ${key}`);
-        return JSON.parse(cached);
-      }
-    } catch (error) {
-      console.error(`Redis get error for ${key}:`, error);
-    }
-  }
-
-  // Fallback to memory cache
-  const memoryCached = memoryCache.get(key);
-  if (memoryCached && Date.now() - memoryCached.timestamp < MEMORY_CACHE_DURATION) {
-    console.log(`Cache HIT (Memory): ${key}`);
-    return memoryCached.data;
-  }
-
-  console.log(`Cache MISS: ${key}`);
-  return null;
-}
-
-async function setCached(key: string, data: any, ttlSeconds: number): Promise<void> {
-  // Try Redis first
-  if (redis) {
-    try {
-      await redis.setex(key, ttlSeconds, JSON.stringify(data));
-      console.log(`Cached in Redis: ${key} (TTL: ${ttlSeconds}s)`);
-    } catch (error) {
-      console.error(`Redis set error for ${key}:`, error);
-    }
-  }
-
-  // Always update memory cache as backup
-  memoryCache.set(key, { data, timestamp: Date.now() });
-  console.log(`Cached in Memory: ${key}`);
-}
-
-async function invalidateCache(pattern: string): Promise<void> {
-  console.log(`Invalidating cache for pattern: ${pattern}`);
-
-  // Clear Redis cache
-  if (redis) {
-    try {
-      const keys = await redis.keys(pattern);
-      if (keys.length > 0) {
-        await redis.del(...keys);
-        console.log(`Invalidated ${keys.length} Redis keys matching ${pattern}`);
-      }
-    } catch (error) {
-      console.error(`Redis invalidation error for ${pattern}:`, error);
-    }
-  }
-
-  // Clear memory cache
-  const keysToDelete: string[] = [];
-  for (const key of memoryCache.keys()) {
-    if (pattern === "*" || key.includes(pattern.replace("*", ""))) {
-      keysToDelete.push(key);
-    }
-  }
-  keysToDelete.forEach(key => memoryCache.delete(key));
-  console.log(`Invalidated ${keysToDelete.length} memory cache keys`);
-}
+let weatherCache: WeatherCache | null = null;
+let forecastCache: WeatherCache | null = null;
+const WEATHER_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 // Completed events tracking (in memory storage for demo - use database in production)
 const completedEvents = new Set<string>();
@@ -206,9 +93,6 @@ async function handleTaskCompletion(req: Request): Promise<Response> {
 
     console.log(`Task ${taskId} completed successfully`);
 
-    // Invalidate tasks cache since a task was completed
-    await invalidateCache("tasks:*");
-
     return new Response(JSON.stringify({ success: true, taskId }), {
       headers: {
         "Content-Type": "application/json",
@@ -257,12 +141,8 @@ async function handleEventAction(req: Request): Promise<Response> {
 
     if (action === "complete") {
       completedEvents.add(eventId);
-      // Invalidate calendar cache when event is completed
-      await invalidateCache("calendar:*");
     } else if (action === "dismiss") {
       dismissedEvents.add(eventId);
-      // Invalidate calendar cache when event is dismissed
-      await invalidateCache("calendar:*");
     } else {
       return new Response(JSON.stringify({ error: "Invalid action" }), {
         status: 400,
@@ -299,56 +179,7 @@ async function handleEventAction(req: Request): Promise<Response> {
   }
 }
 
-// Cache invalidation endpoint
-async function handleCacheRefresh(req: Request): Promise<Response> {
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  try {
-    const body = await req.json();
-    const { type = "all" } = body;
-
-    let pattern = "*";
-    if (type === "weather") pattern = "weather:*";
-    else if (type === "calendar") pattern = "calendar:*";
-    else if (type === "tasks") pattern = "tasks:*";
-    else if (type === "time") pattern = "time:*";
-
-    await invalidateCache(pattern);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Cache invalidated for: ${type}`,
-        pattern,
-      }),
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      },
-    );
-  } catch (error: any) {
-    console.error("Cache refresh error:", error);
-    return new Response(
-      JSON.stringify({
-        error: "Failed to refresh cache",
-        message: error.message,
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
-  }
-}
-
-// API proxy handlers with caching
+// API proxy handlers
 async function handleTodoistTasks(_req: Request): Promise<Response> {
   if (
     !env.TODOIST_API_KEY ||
@@ -367,26 +198,6 @@ async function handleTodoistTasks(_req: Request): Promise<Response> {
     );
   }
 
-  const cacheKey = "tasks:todoist";
-
-  // Check cache first
-  const cached = await getCached(cacheKey);
-  if (cached) {
-    return new Response(
-      JSON.stringify({
-        ...cached,
-        cached: true,
-        cache_age: Date.now() - (cached.fetch_time || Date.now()),
-      }),
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      },
-    );
-  }
-
   try {
     const response = await fetch(`${env.TODOIST_BASE_URL}/tasks`, {
       headers: {
@@ -400,15 +211,8 @@ async function handleTodoistTasks(_req: Request): Promise<Response> {
     }
 
     const data = await response.json();
-    const result = {
-      ...data,
-      fetch_time: Date.now(),
-    };
 
-    // Cache the result
-    await setCached(cacheKey, result, CACHE_DURATIONS.TASKS);
-
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify(data), {
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
@@ -424,35 +228,6 @@ async function handleTodoistTasks(_req: Request): Promise<Response> {
 }
 
 async function handleAppleCalendar(_req: Request): Promise<Response> {
-  const cacheKey = "calendar:all";
-
-  // Check cache first
-  const cached = await getCached(cacheKey);
-  if (cached) {
-    // Still apply event filtering for completed/dismissed events
-    const filteredEvents = cached.events?.filter((event: any) => {
-      return !completedEvents.has(event.id) && !dismissedEvents.has(event.id);
-    }) || [];
-
-    return new Response(
-      JSON.stringify({
-        ...cached,
-        events: filteredEvents,
-        filtered_events: filteredEvents.length,
-        completed_count: completedEvents.size,
-        dismissed_count: dismissedEvents.size,
-        cached: true,
-        cache_age: Date.now() - (cached.fetch_time || Date.now()),
-      }),
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      },
-    );
-  }
-
   try {
     const allEvents: any[] = [];
 
@@ -501,40 +276,31 @@ async function handleAppleCalendar(_req: Request): Promise<Response> {
       }
     }
 
-    // Sort events by date
-    allEvents.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-    );
-
-    const result = {
-      events: allEvents,
-      total_events: allEvents.length,
-      sources: calendarSources.map((s) => ({
-        name: s.name,
-        configured: !(
-          !s.url ||
-          s.url.includes("your_") ||
-          s.url.includes("_here")
-        ),
-      })),
-      fetch_time: Date.now(),
-    };
-
-    // Cache the result
-    await setCached(cacheKey, result, CACHE_DURATIONS.CALENDAR);
-
     // Filter out completed and dismissed events
     const filteredEvents = allEvents.filter((event) => {
       return !completedEvents.has(event.id) && !dismissedEvents.has(event.id);
     });
 
+    // Sort events by date
+    filteredEvents.sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+
     return new Response(
       JSON.stringify({
-        ...result,
         events: filteredEvents,
+        total_events: allEvents.length,
         filtered_events: filteredEvents.length,
         completed_count: completedEvents.size,
         dismissed_count: dismissedEvents.size,
+        sources: calendarSources.map((s) => ({
+          name: s.name,
+          configured: !(
+            !s.url ||
+            s.url.includes("your_") ||
+            s.url.includes("_here")
+          ),
+        })),
       }),
       {
         headers: {
@@ -577,16 +343,15 @@ async function handleWeather(_req: Request): Promise<Response> {
     );
   }
 
-  const cacheKey = `weather:current:${env.WEATHER_LAT}:${env.WEATHER_LON}`;
-
   // Check cache first
-  const cached = await getCached(cacheKey);
-  if (cached) {
+  const now = Date.now();
+  if (weatherCache && now - weatherCache.timestamp < WEATHER_CACHE_DURATION) {
+    console.log("Serving weather data from cache");
     return new Response(
       JSON.stringify({
-        ...cached,
+        ...weatherCache.data,
         cached: true,
-        cache_age_minutes: Math.round((Date.now() - (cached.fetch_time || Date.now())) / 60000),
+        cache_age_minutes: Math.round((now - weatherCache.timestamp) / 60000),
       }),
       {
         headers: {
@@ -627,20 +392,19 @@ async function handleWeather(_req: Request): Promise<Response> {
       );
     }
 
-    const result = {
-      ...data,
-      fetch_time: Date.now(),
-      api_version: data.current ? "3.0" : "2.5",
-    };
-
     // Cache the successful response
-    await setCached(cacheKey, result, CACHE_DURATIONS.WEATHER);
+    weatherCache = {
+      data: data,
+      timestamp: now,
+    };
 
     console.log("Weather data fetched successfully");
     return new Response(
       JSON.stringify({
-        ...result,
+        ...data,
         cached: false,
+        fetch_time: new Date().toISOString(),
+        api_version: data.current ? "3.0" : "2.5",
       }),
       {
         headers: {
@@ -682,16 +446,15 @@ async function handleWeatherForecast(_req: Request): Promise<Response> {
     );
   }
 
-  const cacheKey = `weather:forecast:${env.WEATHER_LAT}:${env.WEATHER_LON}`;
-
-  // Check cache first
-  const cached = await getCached(cacheKey);
-  if (cached) {
+  // Check forecast cache first
+  const now = Date.now();
+  if (forecastCache && now - forecastCache.timestamp < WEATHER_CACHE_DURATION) {
+    console.log("Serving forecast data from cache");
     return new Response(
       JSON.stringify({
-        ...cached,
+        ...forecastCache.data,
         cached: true,
-        cache_age_minutes: Math.round((Date.now() - (cached.fetch_time || Date.now())) / 60000),
+        cache_age_minutes: Math.round((now - forecastCache.timestamp) / 60000),
       }),
       {
         headers: {
@@ -751,22 +514,21 @@ async function handleWeatherForecast(_req: Request): Promise<Response> {
       );
     }
 
-    const result = {
-      ...data,
-      fetch_time: Date.now(),
-      api_version:
-        data.api_version ||
-        (data.hourly && data.daily ? "one-call" : "standard"),
-    };
-
     // Cache the successful response
-    await setCached(cacheKey, result, CACHE_DURATIONS.FORECAST);
+    forecastCache = {
+      data: data,
+      timestamp: now,
+    };
 
     console.log("Weather forecast fetched successfully");
     return new Response(
       JSON.stringify({
-        ...result,
+        ...data,
         cached: false,
+        fetch_time: new Date().toISOString(),
+        api_version:
+          data.api_version ||
+          (data.hourly && data.daily ? "one-call" : "standard"),
       }),
       {
         headers: {
@@ -791,26 +553,6 @@ async function handleWeatherForecast(_req: Request): Promise<Response> {
 }
 
 async function handleTime(_req: Request): Promise<Response> {
-  const cacheKey = "time:current";
-
-  // Check cache first
-  const cached = await getCached(cacheKey);
-  if (cached) {
-    return new Response(
-      JSON.stringify({
-        ...cached,
-        cached: true,
-        cache_age: Date.now() - (cached.fetch_time || Date.now()),
-      }),
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-      },
-    );
-  }
-
   // Try different time API endpoints with retry logic
   const timeEndpoints = [
     "https://worldtimeapi.org/api/timezone/Europe/London",
@@ -831,16 +573,8 @@ async function handleTime(_req: Request): Promise<Response> {
       }
 
       const data = await response.json();
-      const result = {
-        ...data,
-        fetch_time: Date.now(),
-      };
-
-      // Cache the successful response
-      await setCached(cacheKey, result, CACHE_DURATIONS.TIME);
-
       console.log("Time API request successful");
-      return new Response(JSON.stringify(result), {
+      return new Response(JSON.stringify(data), {
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
@@ -864,7 +598,6 @@ async function handleTime(_req: Request): Promise<Response> {
     utc_offset: now.getTimezoneOffset() * -60,
     fallback: true,
     error: "Using local time due to API unavailability",
-    fetch_time: Date.now(),
   };
   return new Response(JSON.stringify(fallbackData), {
     headers: {
@@ -1160,10 +893,6 @@ const server = Bun.serve({
       return handleTime(req);
     }
 
-    if (path === "/api/cache/refresh") {
-      return handleCacheRefresh(req);
-    }
-
     // Serve index.html for root path
     if (path === "/" || path === "/index.html") {
       return new Response(file("./index.html"), {
@@ -1207,17 +936,3 @@ console.log(`   - /api/calendar (Apple Calendar)`);
 console.log(`   - /api/weather (OpenWeather)`);
 console.log(`   - /api/weather/forecast (OpenWeather Forecast)`);
 console.log(`   - /api/time (World Time API)`);
-console.log(`   - /api/cache/refresh (Cache invalidation)`);
-
-// Cache statistics logging (optional)
-setInterval(() => {
-  if (redis) {
-    redis.info("stats").then((stats) => {
-      const lines = stats.split("\n");
-      const hits = lines.find(l => l.startsWith("keyspace_hits"))?.split(":")[1] || "0";
-      const misses = lines.find(l => l.startsWith("keyspace_misses"))?.split(":")[1] || "0";
-      const hitRate = parseInt(hits) / (parseInt(hits) + parseInt(misses)) * 100 || 0;
-      console.log(`📊 Cache stats - Hits: ${hits}, Misses: ${misses}, Hit Rate: ${hitRate.toFixed(1)}%`);
-    }).catch(() => {});
-  }
-}, 5 * 60 * 1000); // Every 5 minutes

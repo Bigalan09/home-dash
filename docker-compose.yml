@@ -23,6 +23,27 @@ services:
       - "com.homedashboard.service=web"
       - "com.homedashboard.description=Static file server for Pi Touch Display 2"
 
+  # Redis cache service
+  redis:
+    image: redis:7-alpine
+    container_name: homedashboard-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    expose:
+      - "6379"
+    restart: unless-stopped
+    networks:
+      - dashboard-network
+    labels:
+      - "com.homedashboard.service=redis"
+      - "com.homedashboard.description=Redis cache for API responses"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # API backend service
   api:
     build: .
@@ -38,6 +59,7 @@ services:
       - TIME_API_URL=${TIME_API_URL:-http://worldtimeapi.org/api/timezone/Europe/London}
       - PORT=3001
       - NODE_ENV=${NODE_ENV:-production}
+      - REDIS_URL=redis://redis:6379
     volumes:
       - dashboard-data:/app/data # Persistent data volume
       - ./.env:/app/.env:ro # Environment file
@@ -46,6 +68,8 @@ services:
     restart: unless-stopped
     networks:
       - dashboard-network
+    depends_on:
+      - redis
     labels:
       - "com.homedashboard.service=api"
       - "com.homedashboard.description=API backend for dashboard integrations"
@@ -62,9 +86,13 @@ networks:
     driver: bridge
     name: homedashboard-network
 
-# Optional: Add volumes for persistent data if needed in the future
+# Volumes for persistent data
 volumes:
   dashboard-data:
     driver: local
     labels:
       - "com.homedashboard.volume=data"
+  redis-data:
+    driver: local
+    labels:
+      - "com.homedashboard.volume=redis-cache"
