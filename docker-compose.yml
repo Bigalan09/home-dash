@@ -7,8 +7,8 @@ services:
       - "${WEB_PORT:-3000}:80"
     volumes:
       - ./index.html:/usr/share/nginx/html/index.html:ro
-      - ./styles.css:/usr/share/nginx/html/styles.css:ro
       - ./modern-light.css:/usr/share/nginx/html/modern-light.css:ro
+      - ./modern-dark.css:/usr/share/nginx/html/modern-dark.css:ro
       - ./futuristic.css:/usr/share/nginx/html/futuristic.css:ro
       - ./script.js:/usr/share/nginx/html/script.js:ro
       - ./nginx.conf:/etc/nginx/nginx.conf:ro

@@ -32,24 +32,35 @@ Default to using Bun instead of Node.js for all JavaScript/TypeScript developmen
 ```
 /
 ├── index.html          # Clean HTML structure optimized for Pi Touch Display 2
-├── modern-light.css    # Modern light theme (default) - Todoist-inspired
-├── futuristic.css      # Original dark futuristic theme
-├── styles.css          # Legacy CSS file (preserved as backup)
+├── modern-dark.css     # Modern dark theme with pink accents (currently active)
+├── modern-light.css    # Modern light theme - clean and minimal
+├── futuristic.css      # Original dark futuristic theme with space aesthetics
 ├── script.js           # Application logic with touch event handling
-├── server.ts           # Bun server with API proxies and caching
-├── package.json        # Project dependencies and npm scripts
+├── server.ts           # Enhanced Bun server with Redis caching and fallback
+├── server-redis.ts     # Backup of Redis-enabled server implementation
+├── package.json        # Project dependencies and Bun scripts
 ├── .env.example        # Environment configuration template
-├── CLAUDE.md          # This documentation file
+├── CLAUDE.md          # This comprehensive documentation file
 ├── CHANGELOG.md        # Recent changes and theme documentation
-└── docker-compose.yml  # Docker deployment configuration
+├── README.md          # Quick start guide and overview
+├── docker-compose.yml  # Docker deployment with Redis, nginx, and API
+├── Dockerfile         # Container build configuration
+├── nginx.conf         # Nginx configuration for static file serving
+├── bun.lock           # Bun dependency lock file
+└── tests/             # Test suites for server, frontend, and integration
+    ├── server.test.ts
+    ├── frontend.test.ts
+    ├── integration.test.ts
+    └── syntax.test.ts
 ```
 
 ### Technology Stack
 - **Frontend**: Vanilla HTML5, CSS3, JavaScript ES6+
-- **Backend**: Bun.js with TypeScript
-- **APIs**: Todoist, Apple Calendar (iCloud), OpenWeatherMap, World Time API
-- **Deployment**: Docker with nginx reverse proxy
-- **Target Hardware**: Raspberry Pi with 7" Touch Display 2
+- **Backend**: Bun.js with TypeScript and Redis caching (with in-memory fallback)
+- **APIs**: Todoist, Apple Calendar (iCloud), OpenWeatherMap, World Time API, UK Holidays
+- **Deployment**: Docker Compose with nginx, Redis, and API containers
+- **Testing**: Playwright for integration testing, Bun test runner
+- **Target Hardware**: Raspberry Pi with 7" Touch Display 2 (720×1280 portrait)
 
 ### Core Architecture Patterns
 
@@ -215,7 +226,7 @@ bun install
 
 # Development with hot reload
 bun run dev
-# Starts server at http://localhost:3000
+# Starts server at http://localhost:3000 (or PORT from .env)
 
 # Production
 bun run start
@@ -256,7 +267,7 @@ docker-compose down
 
 ### Touch Interface Optimizations
 ```css
-/* Pi-specific optimizations in styles.css */
+/* Pi-specific optimizations in theme CSS files */
 body {
   max-width: 720px;
   max-height: 1280px;
@@ -285,10 +296,22 @@ body {
 
 ## Theme System
 
-### Dual Theme Architecture
-The application now supports two distinct themes with seamless switching:
+### Triple Theme Architecture
+The application now supports three distinct themes with seamless switching:
 
-**Modern Light Theme** (`modern-light.css`) - **Default**:
+**Modern Dark Theme** (`modern-dark.css`) - **Currently Active**:
+```css
+/* CSS Custom Properties */
+:root {
+  --bg: #0f0f0f;                /* Deep dark background */
+  --text: #f8f9fa;              /* Light text for contrast */
+  --accent: #e91e63;            /* Vibrant pink accent */
+  --border: #2a2a2a;            /* Subtle dark borders */
+  --focus: #e91e63;             /* Pink focus states */
+}
+```
+
+**Modern Light Theme** (`modern-light.css`):
 ```css
 /* CSS Custom Properties */
 :root {
@@ -301,7 +324,7 @@ The application now supports two distinct themes with seamless switching:
 }
 ```
 
-**Futuristic Dark Theme** (`futuristic.css`):
+**Futuristic Dark Theme** (`futuristic.css`) - **Original Space Theme**:
 ```css
 /* Original space mission control aesthetic */
 :root {
@@ -315,7 +338,10 @@ The application now supports two distinct themes with seamless switching:
 ### Theme Switching
 To switch themes, modify the stylesheet link in `index.html`:
 ```html
-<!-- Modern Light Theme (default) -->
+<!-- Modern Dark Theme (currently active) -->
+<link rel="stylesheet" href="modern-dark.css" />
+
+<!-- Modern Light Theme -->
 <link rel="stylesheet" href="modern-light.css" />
 
 <!-- Futuristic Dark Theme -->
@@ -323,54 +349,64 @@ To switch themes, modify the stylesheet link in `index.html`:
 ```
 
 ### Accessibility Compliance
-- **WCAG AA compliant**: Text contrast ratios exceed 4.5:1 for normal text
-- **Focus indicators**: Clear, accessible outline styles
+- **WCAG AA compliant**: All themes maintain contrast ratios exceeding 4.5:1 for normal text
+- **Focus indicators**: Clear, accessible outline styles across all themes
 - **Touch targets**: Minimum 44px for all interactive elements
 - **Color independence**: Information conveyed through multiple visual cues
+- **Theme consistency**: Semantic colour tokens ensure consistent UX across themes
 
 ## Design System
 
-### Color Palette (Modern Light Theme)
+### Color Palette (Modern Dark Theme - Active)
 ```css
 /* Primary Colors */
---primary-cyan: #00d4ff      /* Primary accent */
---primary-green: #00ffaa     /* Success/complete */
---warning: #ffa502          /* Medium priority */
---danger: #ff4757           /* High priority */
---info: #747d8c             /* Low priority */
+--accent: #e91e63           /* Primary pink accent */
+--success: #10b981          /* Success/complete states */
+--warning: #f59e0b          /* Medium priority */
+--danger: #ef4444           /* High priority */
+--info: #6b7280             /* Low priority/muted */
 
 /* Background & Layout */
---bg-primary: #0a0a0a       /* Main background */
---bg-secondary: #000000     /* Deep black */
---text-primary: #e8f4fd     /* Main text */
---border: rgba(0, 149, 255, 0.2)  /* Borders */
+--bg: #0f0f0f               /* Main dark background */
+--bg-elev: #1a1a1a          /* Elevated surfaces */
+--text: #f8f9fa             /* Primary text */
+--text-muted: #9ca3af       /* Secondary text */
+--border: #2a2a2a           /* Subtle borders */
 ```
 
 ### Typography
 ```css
 /* Font Families */
-font-family: "Space Grotesk", monospace;  /* Body text */
-font-family: "Orbitron", monospace;       /* Headers */
+font-family: "Inter", -apple-system, sans-serif;     /* Body text */
+font-family: "Poppins", "Inter", sans-serif;         /* Headers */
 
 /* Font Weights */
 font-weight: 300;  /* Light */
 font-weight: 400;  /* Regular */
 font-weight: 500;  /* Medium */
+font-weight: 600;  /* Semi-bold */
 font-weight: 700;  /* Bold */
 ```
 
 ### Animation System
 ```css
-/* Background grid animation */
-@keyframes gridMove {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(40px, 40px); }
+/* Modern subtle animations */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Scanning effect */
-@keyframes scan {
-  0%, 100% { transform: translateX(-100%); }
-  50% { transform: translateX(100vw); }
+/* Loading spinner */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Touch feedback */
+@keyframes press {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
 }
 ```
 
@@ -595,7 +631,7 @@ async loadTasks() {
 ## Extending the Application
 
 ### Adding New API Integrations
-1. **Add environment variables** to `.env.example`
+1. **Add environment variables** to `.env.example` and `.env`
 2. **Create handler function** in `server.ts`:
    ```typescript
    async function handleNewAPI(req: Request): Promise<Response> {
@@ -750,14 +786,15 @@ docker-compose logs api | grep "Fetching"
 docker-compose logs api | grep -i error
 ```
 
-## Recent Updates & Improvements
+### Recent Updates & Improvements
 
-### Theme System Implementation (September 2025)
-- **Dual Theme Support**: Added modern light theme alongside original futuristic dark theme
-- **CSS Custom Properties**: Implemented semantic color tokens for consistent theming
-- **Accessibility Compliance**: Ensured WCAG AA compliance across both themes
-- **Layout Preservation**: No layout changes during theme refactor - only visual styling updated
-- **Production Ready**: Both themes fully tested and optimized for Pi Touch Display 2
+### Enhanced Theme System (September 2025)
+- **Triple Theme Support**: Modern dark (active), modern light, and futuristic themes
+- **Modern Dark Theme**: New sophisticated dark theme with vibrant pink accents
+- **CSS Custom Properties**: Comprehensive semantic colour tokens for consistent theming
+- **Accessibility Compliance**: Ensured WCAG AA compliance across all themes
+- **Layout Preservation**: No layout changes during theme updates - only visual styling
+- **Production Ready**: All themes fully tested and optimized for Pi Touch Display 2
 
 ### Weather Modal Enhancement (September 2025)
 - **Bug Fix**: Resolved weather modal not opening issue
@@ -767,23 +804,29 @@ docker-compose logs api | grep -i error
 - **API Integration**: Full OpenWeather One Call API integration with fallback support
 
 ### Modern UI Improvements (September 2025)
-- **Theme Redesign**: Updated to modern light theme with Inter/Poppins fonts
-- **Color Palette**: Calming blue (#4299e1) and green (#48bb78) accent colors
-- **Animation Simplification**: Removed futuristic effects for clean, minimal interactions
-- **Toast Notifications**: Added success/error toast system for user feedback
-- **Button Feedback**: Enhanced all interactive elements with clear pressed states
-- **Overdue Tasks**: Smart highlighting with day count and dynamic "Today | Overdue" button text
+- **Active Dark Theme**: Currently using modern dark theme with pink (#e91e63) accents
+- **Typography Upgrade**: Inter and Poppins fonts for improved readability
+- **Refined Animations**: Clean, subtle animations optimised for touch interaction
+- **Toast Notifications**: Success/error toast system for user feedback
+- **Enhanced Interactions**: All interactive elements with clear pressed states
+- **Smart Task Management**: Overdue task highlighting with dynamic button text
+- **Touch Optimisation**: All elements exceed 44px minimum touch targets
 
-### Development Workflow
-- **Hot Reload**: Bun development server with automatic reloading
-- **Error Recovery**: Enhanced fallback systems for all external APIs
+### Development Workflow & Infrastructure
+- **Hot Reload**: Bun development server with automatic reloading via `bun run dev`
+- **Redis Caching**: Enhanced caching with automatic in-memory fallback when Redis unavailable
+- **Docker Deployment**: Multi-container setup with nginx, Redis, and API services
+- **Test Suite**: Comprehensive testing with Playwright for integration tests
+- **Error Recovery**: Robust fallback systems for all external APIs
 - **Performance Monitoring**: Built-in logging and cache efficiency tracking
-- **Touch Testing**: Optimized for Pi Touch Display 2 with 44px minimum targets
+- **Touch Testing**: Optimised for Pi Touch Display 2 with verified 44px minimum targets
 
 ### Documentation
 - **Comprehensive Guides**: Complete setup, API configuration, and troubleshooting
-- **Code Examples**: Real implementation patterns and best practices
-- **Deployment Options**: Docker, direct server, and Pi kiosk mode instructions
+- **Code Examples**: Real implementation patterns and best practices  
+- **Deployment Options**: Docker Compose, direct Bun server, and Pi kiosk mode instructions
+- **Architecture Documentation**: Detailed server structure, caching strategy, and API integration patterns
+- **Theme Documentation**: Complete guide to theme system and customisation
 - **Extensibility**: Clear patterns for adding new features and API integrations
 
-This comprehensive documentation provides everything needed to understand, maintain, and extend the Mission Control Dashboard. The application is production-ready with robust error handling, smart caching, optimized performance for the Raspberry Pi Touch Display 2, and now features a modern dual-theme system with enhanced weather forecasting capabilities.
+This comprehensive documentation provides everything needed to understand, maintain, and extend the Mission Control Dashboard. The application is production-ready with robust error handling, Redis caching with in-memory fallback, optimised performance for the Raspberry Pi Touch Display 2, and features a sophisticated triple-theme system with enhanced weather forecasting capabilities and comprehensive test coverage.

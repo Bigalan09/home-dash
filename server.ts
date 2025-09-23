@@ -55,7 +55,10 @@ async function initRedis() {
     await redis.ping();
     return true;
   } catch (error) {
-    console.error("Failed to connect to Redis, falling back to in-memory cache:", error);
+    console.error(
+      "Failed to connect to Redis, falling back to in-memory cache:",
+      error,
+    );
     redis = null;
     return false;
   }
@@ -66,11 +69,11 @@ initRedis();
 
 // Cache configuration
 const CACHE_DURATIONS = {
-  WEATHER: 60 * 60,        // 1 hour in seconds
-  FORECAST: 60 * 60,       // 1 hour in seconds
-  CALENDAR: 30 * 60,       // 30 minutes in seconds
-  TASKS: 15 * 60,          // 15 minutes in seconds
-  TIME: 5 * 60,            // 5 minutes in seconds
+  WEATHER: 60 * 60, // 1 hour in seconds
+  FORECAST: 60 * 60, // 1 hour in seconds
+  CALENDAR: 30 * 60, // 30 minutes in seconds
+  TASKS: 15 * 60, // 15 minutes in seconds
+  TIME: 15 * 60, // 5 minutes in seconds
 };
 
 // Fallback in-memory cache for when Redis is unavailable
@@ -94,7 +97,10 @@ async function getCached(key: string): Promise<any | null> {
 
   // Fallback to memory cache
   const memoryCached = memoryCache.get(key);
-  if (memoryCached && Date.now() - memoryCached.timestamp < MEMORY_CACHE_DURATION) {
+  if (
+    memoryCached &&
+    Date.now() - memoryCached.timestamp < MEMORY_CACHE_DURATION
+  ) {
     console.log(`Cache HIT (Memory): ${key}`);
     return memoryCached.data;
   }
@@ -103,7 +109,11 @@ async function getCached(key: string): Promise<any | null> {
   return null;
 }
 
-async function setCached(key: string, data: any, ttlSeconds: number): Promise<void> {
+async function setCached(
+  key: string,
+  data: any,
+  ttlSeconds: number,
+): Promise<void> {
   // Try Redis first
   if (redis) {
     try {
@@ -128,7 +138,9 @@ async function invalidateCache(pattern: string): Promise<void> {
       const keys = await redis.keys(pattern);
       if (keys.length > 0) {
         await redis.del(...keys);
-        console.log(`Invalidated ${keys.length} Redis keys matching ${pattern}`);
+        console.log(
+          `Invalidated ${keys.length} Redis keys matching ${pattern}`,
+        );
       }
     } catch (error) {
       console.error(`Redis invalidation error for ${pattern}:`, error);
@@ -142,7 +154,7 @@ async function invalidateCache(pattern: string): Promise<void> {
       keysToDelete.push(key);
     }
   }
-  keysToDelete.forEach(key => memoryCache.delete(key));
+  keysToDelete.forEach((key) => memoryCache.delete(key));
   console.log(`Invalidated ${keysToDelete.length} memory cache keys`);
 }
 
@@ -430,9 +442,10 @@ async function handleAppleCalendar(_req: Request): Promise<Response> {
   const cached = await getCached(cacheKey);
   if (cached) {
     // Still apply event filtering for completed/dismissed events
-    const filteredEvents = cached.events?.filter((event: any) => {
-      return !completedEvents.has(event.id) && !dismissedEvents.has(event.id);
-    }) || [];
+    const filteredEvents =
+      cached.events?.filter((event: any) => {
+        return !completedEvents.has(event.id) && !dismissedEvents.has(event.id);
+      }) || [];
 
     return new Response(
       JSON.stringify({
@@ -586,7 +599,9 @@ async function handleWeather(_req: Request): Promise<Response> {
       JSON.stringify({
         ...cached,
         cached: true,
-        cache_age_minutes: Math.round((Date.now() - (cached.fetch_time || Date.now())) / 60000),
+        cache_age_minutes: Math.round(
+          (Date.now() - (cached.fetch_time || Date.now())) / 60000,
+        ),
       }),
       {
         headers: {
@@ -691,7 +706,9 @@ async function handleWeatherForecast(_req: Request): Promise<Response> {
       JSON.stringify({
         ...cached,
         cached: true,
-        cache_age_minutes: Math.round((Date.now() - (cached.fetch_time || Date.now())) / 60000),
+        cache_age_minutes: Math.round(
+          (Date.now() - (cached.fetch_time || Date.now())) / 60000,
+        ),
       }),
       {
         headers: {
@@ -1210,14 +1227,27 @@ console.log(`   - /api/time (World Time API)`);
 console.log(`   - /api/cache/refresh (Cache invalidation)`);
 
 // Cache statistics logging (optional)
-setInterval(() => {
-  if (redis) {
-    redis.info("stats").then((stats) => {
-      const lines = stats.split("\n");
-      const hits = lines.find(l => l.startsWith("keyspace_hits"))?.split(":")[1] || "0";
-      const misses = lines.find(l => l.startsWith("keyspace_misses"))?.split(":")[1] || "0";
-      const hitRate = parseInt(hits) / (parseInt(hits) + parseInt(misses)) * 100 || 0;
-      console.log(`📊 Cache stats - Hits: ${hits}, Misses: ${misses}, Hit Rate: ${hitRate.toFixed(1)}%`);
-    }).catch(() => {});
-  }
-}, 5 * 60 * 1000); // Every 5 minutes
+setInterval(
+  () => {
+    if (redis) {
+      redis
+        .info("stats")
+        .then((stats) => {
+          const lines = stats.split("\n");
+          const hits =
+            lines.find((l) => l.startsWith("keyspace_hits"))?.split(":")[1] ||
+            "0";
+          const misses =
+            lines.find((l) => l.startsWith("keyspace_misses"))?.split(":")[1] ||
+            "0";
+          const hitRate =
+            (parseInt(hits) / (parseInt(hits) + parseInt(misses))) * 100 || 0;
+          console.log(
+            `📊 Cache stats - Hits: ${hits}, Misses: ${misses}, Hit Rate: ${hitRate.toFixed(1)}%`,
+          );
+        })
+        .catch(() => {});
+    }
+  },
+  5 * 60 * 1000,
+); // Every 5 minutes
