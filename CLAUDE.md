@@ -31,7 +31,9 @@ Default to using Bun instead of Node.js for all JavaScript/TypeScript developmen
 ### File Structure
 ```
 /
-├── index.html          # Clean HTML structure optimized for Pi Touch Display 2
+├── index.html          # Landing page that redirects to calendar.html
+├── calendar.html       # Calendar page with single-column layout (1st page)
+├── tasks.html          # Tasks page with single-column layout (2nd page)
 ├── modern-dark.css     # Modern dark theme with pink accents (currently active)
 ├── modern-light.css    # Modern light theme - clean and minimal
 ├── futuristic.css      # Original dark futuristic theme with space aesthetics
@@ -55,12 +57,13 @@ Default to using Bun instead of Node.js for all JavaScript/TypeScript developmen
 ```
 
 ### Technology Stack
-- **Frontend**: Vanilla HTML5, CSS3, JavaScript ES6+
+- **Frontend**: Vanilla HTML5, CSS3, JavaScript ES6+ with separate page architecture
 - **Backend**: Bun.js with TypeScript and Redis caching (with in-memory fallback)
 - **APIs**: Todoist, Apple Calendar (iCloud), OpenWeatherMap, World Time API, UK Holidays
 - **Deployment**: Docker Compose with nginx, Redis, and API containers
 - **Testing**: Playwright for integration testing, Bun test runner
 - **Target Hardware**: Raspberry Pi with 7" Touch Display 2 (720×1280 portrait)
+- **Layout**: Single-column responsive layout optimised for separate calendar and task pages
 
 ### Core Architecture Patterns
 
@@ -79,8 +82,16 @@ Default to using Bun instead of Node.js for all JavaScript/TypeScript developmen
 - Modal system for detailed views
 - Responsive calendar views (daily/weekly/monthly)
 - Graceful API failure handling
+- Single-page architecture for focused user experience
 
-**3. Dual Theme System** (`modern-light.css` / `futuristic.css`):
+**3. Multi-Page Navigation** (`index.html`, `calendar.html`, `tasks.html`):
+- Landing page with automatic redirect to calendar
+- Dedicated calendar page with full-screen calendar views
+- Dedicated tasks page with focused task management
+- Visual pagination indicators showing current page
+- Single-column CSS grid layout for optimal Pi display usage
+
+**4. Triple Theme System** (`modern-light.css` / `modern-dark.css` / `futuristic.css`):
 - CSS Grid and Flexbox layouts
 - Touch-friendly 44px minimum targets
 - Animated background effects and transitions
@@ -265,6 +276,12 @@ docker-compose down
 - **Interface**: DSI connector
 - **Power**: Direct from Raspberry Pi GPIO
 
+### Page Architecture for Pi Display
+- **Single-Column Layout**: Full utilisation of 720px width with single-column grid
+- **Dedicated Pages**: Separate calendar.html and tasks.html for focused interactions
+- **Navigation**: Pagination dots indicate current page (1st = calendar, 2nd = tasks)
+- **Optimised Touch Targets**: All interactive elements exceed 44px minimum size
+
 ### Touch Interface Optimizations
 ```css
 /* Pi-specific optimizations in theme CSS files */
@@ -273,6 +290,13 @@ body {
   max-height: 1280px;
   touch-action: manipulation;
   user-select: none;
+}
+
+/* Single-column grid layout */
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto 1fr;
 }
 
 /* Touch-friendly button sizes (44px minimum) */
@@ -786,15 +810,22 @@ docker-compose logs api | grep "Fetching"
 docker-compose logs api | grep -i error
 ```
 
-### Recent Updates & Improvements
+## Recent Updates & Improvements
+
+### Multi-Page Architecture (September 2025)
+- **Separate Pages**: Split calendar and tasks into dedicated pages (calendar.html, tasks.html)
+- **Single-Column Layout**: Optimised CSS grid for full-screen single-column experience
+- **Navigation System**: Visual pagination indicators for current page identification
+- **Focused User Experience**: Dedicated interfaces for calendar and task management
+- **Production Ready**: All pages tested and optimised for Pi Touch Display 2
 
 ### Enhanced Theme System (September 2025)
 - **Triple Theme Support**: Modern dark (active), modern light, and futuristic themes
 - **Modern Dark Theme**: New sophisticated dark theme with vibrant pink accents
 - **CSS Custom Properties**: Comprehensive semantic colour tokens for consistent theming
 - **Accessibility Compliance**: Ensured WCAG AA compliance across all themes
-- **Layout Preservation**: No layout changes during theme updates - only visual styling
-- **Production Ready**: All themes fully tested and optimized for Pi Touch Display 2
+- **Layout Preservation**: Single-column layout maintained across all themes
+- **Production Ready**: All themes fully tested and optimised for Pi Touch Display 2
 
 ### Weather Modal Enhancement (September 2025)
 - **Bug Fix**: Resolved weather modal not opening issue
@@ -814,8 +845,9 @@ docker-compose logs api | grep -i error
 
 ### Development Workflow & Infrastructure
 - **Hot Reload**: Bun development server with automatic reloading via `bun run dev`
+- **Multi-Page Serving**: Server handles calendar.html, tasks.html, and index.html routing
 - **Redis Caching**: Enhanced caching with automatic in-memory fallback when Redis unavailable
-- **Docker Deployment**: Multi-container setup with nginx, Redis, and API services
+- **Docker Deployment**: Multi-container setup with nginx, Redis, and API services including new HTML files
 - **Test Suite**: Comprehensive testing with Playwright for integration tests
 - **Error Recovery**: Robust fallback systems for all external APIs
 - **Performance Monitoring**: Built-in logging and cache efficiency tracking
@@ -829,4 +861,4 @@ docker-compose logs api | grep -i error
 - **Theme Documentation**: Complete guide to theme system and customisation
 - **Extensibility**: Clear patterns for adding new features and API integrations
 
-This comprehensive documentation provides everything needed to understand, maintain, and extend the Mission Control Dashboard. The application is production-ready with robust error handling, Redis caching with in-memory fallback, optimised performance for the Raspberry Pi Touch Display 2, and features a sophisticated triple-theme system with enhanced weather forecasting capabilities and comprehensive test coverage.
+This comprehensive documentation provides everything needed to understand, maintain, and extend the Mission Control Dashboard. The application is production-ready with robust error handling, Redis caching with in-memory fallback, multi-page architecture optimised for the Raspberry Pi Touch Display 2, and features a sophisticated triple-theme system with enhanced weather forecasting capabilities and comprehensive test coverage.

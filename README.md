@@ -1,6 +1,6 @@
 # Mission Control Dashboard
 
-A sophisticated real-time home dashboard specifically designed for the **Raspberry Pi Touch Display 2** (720×1280 portrait). Features calendar integration, interactive task management, weather forecasting, and time display in a modern touch-optimised interface.
+A sophisticated real-time home dashboard specifically designed for the **Raspberry Pi Touch Display 2** (720×1280 portrait). Features separate calendar and task pages with navigation, weather forecasting, and time display in a modern touch-optimised interface.
 
 ![Dashboard Preview](https://img.shields.io/badge/Platform-Raspberry%20Pi-red?logo=raspberry-pi) ![Theme](https://img.shields.io/badge/Theme-Modern%20Dark-e91e63) ![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 
@@ -21,9 +21,15 @@ bun run dev
 docker-compose up -d
 ```
 
-Access the dashboard at `http://localhost:3003` (or your configured port).
+Access the dashboard at `http://localhost:3000` (or your configured port). The app will redirect to the calendar page by default.
 
 ## ✨ Key Features
+
+### 🔄 Multi-Page Navigation
+- **Calendar Page** (`calendar.html`) - Dedicated calendar view with daily, weekly, and monthly views
+- **Tasks Page** (`tasks.html`) - Focused task management with today/upcoming views  
+- **Pagination Indicators** - Visual indication of current page (1st dot = calendar, 2nd dot = tasks)
+- **Single Column Layout** - Optimised full-screen experience for each page
 
 ### 📅 Multi-Source Calendar Integration
 - **Todoist Tasks** - Converted to calendar events with completion tracking

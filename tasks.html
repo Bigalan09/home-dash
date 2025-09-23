@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=720, height=1280, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        />
+        <title>Tasks - Home Dashboard</title>
+        <link rel="stylesheet" href="modern-dark.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"
+        />
+    </head>
+    <body>
+        <div class="refresh-indicator" id="refreshIndicator"></div>
+
+        <div class="dashboard">
+            <header class="header">
+                <div class="system-controls">
+                    <button
+                        class="system-btn"
+                        onclick="refreshData()"
+                        title="Refresh Data"
+                    >
+                        <i class="ti ti-refresh"></i>
+                    </button>
+                    <button
+                        class="system-btn"
+                        onclick="toggleScreen()"
+                        title="Screen Off"
+                    >
+                        <i class="ti ti-power"></i>
+                    </button>
+                </div>
+                <div class="time-section">
+                    <div class="time" id="time">--:--:--</div>
+                    <div class="date" id="date">Loading...</div>
+                </div>
+                <div class="weather-section" onclick="showWeatherDetails()">
+                    <!-- Weather loading state -->
+                    <div
+                        class="loading-state weather-loading"
+                        id="weatherLoading"
+                    >
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">Loading weather...</div>
+                    </div>
+
+                    <!-- Weather content -->
+                    <div class="weather-content" id="weatherContent">
+                        <div class="weather-icon" id="weatherIcon">🌤️</div>
+                        <div class="weather-info">
+                            <div class="temperature" id="temperature">18°C</div>
+                            <div class="weather-desc" id="weatherDesc">
+                                Partly Cloudy
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="quote-section">
+                <div class="quote" id="dailyQuote">
+                    "The future belongs to those who believe in the beauty of
+                    their dreams."
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="ti ti-checklist card-icon"></i>
+                        Tasks
+                    </div>
+                    <div class="view-controls">
+                        <button
+                            class="view-btn active"
+                            data-task-view="today"
+                            id="todayViewBtn"
+                        >
+                            <i class="ti ti-calendar-today"></i>
+                            <span id="todayViewText">Today</span>
+                        </button>
+                        <button class="view-btn" data-task-view="upcoming">
+                            <i class="ti ti-calendar-week"></i>
+                            Upcoming
+                        </button>
+                    </div>
+                </div>
+                <div class="todos-container" id="todosContainer">
+                    <div class="loading pulse">
+                        Initialising task systems...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination indicator -->
+        <div class="pagination" id="pagination">
+            <div class="pagination-dot"></div>
+            <div class="pagination-dot active"></div>
+            <div class="pagination-dot"></div>
+        </div>
+
+        <!-- Modals -->
+        <div class="modal" id="eventModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Event Details</div>
+                    <button
+                        class="close-btn"
+                        onclick="closeModal('eventModal')"
+                    >
+                        <i class="ti ti-x"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="eventModalBody">
+                    <!-- Event details will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="taskModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Task Details</div>
+                    <button class="close-btn" onclick="closeModal('taskModal')">
+                        <i class="ti ti-x"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="taskModalBody">
+                    <!-- Task details will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="weatherModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="ti ti-cloud"></i> Weather Forecast
+                    </div>
+                    <button
+                        class="close-btn"
+                        onclick="closeModal('weatherModal')"
+                    >
+                        <i class="ti ti-x"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="weatherModalBody">
+                    <div class="weather-view-controls">
+                        <button
+                            class="view-btn"
+                            data-view="hourly"
+                            onclick="switchWeatherView('hourly')"
+                        >
+                            <i class="ti ti-clock"></i> Hourly
+                        </button>
+                        <button
+                            class="view-btn active"
+                            data-view="daily"
+                            onclick="switchWeatherView('daily')"
+                        >
+                            <i class="ti ti-calendar"></i> 5-Day
+                        </button>
+                    </div>
+                    <div
+                        class="weather-forecast-container"
+                        id="weatherForecastContainer"
+                    >
+                        <!-- Weather forecast will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div class="toast" id="toast">
+            <div class="toast-content">
+                <i class="toast-icon ti ti-check"></i>
+                <span class="toast-message">Data refreshed successfully</span>
+            </div>
+        </div>
+
+        <script src="script.js"></script>
+    </body>
+</html>
