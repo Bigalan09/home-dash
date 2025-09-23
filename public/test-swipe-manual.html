@@ -108,6 +108,8 @@
             margin: 10px 0;
         }
     </style>
+    <!-- Include Touchy.js from CDN for better multi-touch support -->
+    <script src="https://cdn.jsdelivr.net/gh/jairajs89/Touchy.js@master/touchy.min.js"></script>
 </head>
 <body>
     <div class="test-header">
@@ -184,13 +186,16 @@ SwipeNavigationManager Status: Loading...
         function updateDebugInfo() {
             const debugDiv = document.getElementById('debugInfo');
             const managerExists = typeof window.SwipeNavigationManager === 'function';
+            const touchyLoaded = typeof Touchy !== 'undefined';
 
             debugDiv.innerHTML = `
 SwipeNavigationManager: ${managerExists ? '✅ Loaded' : '❌ Not Found'}
+Touchy.js: ${touchyLoaded ? '✅ Loaded' : '❌ Not Found'}
 Current Page: ${currentSimulatedPage}
 Touch Listeners: ${document.querySelectorAll('*').length > 0 ? '✅ Active' : '❌ Inactive'}
 Test Manager: ${testManager ? '✅ Initialized' : '❌ Not Created'}
 Navigation Lock: ${testManager?.isNavigating || false}
+Multi-touch Support: ${touchyLoaded ? '✅ Touchy.js Active' : '⚠️ Using standard touch events'}
             `;
         }
 
@@ -198,19 +203,72 @@ Navigation Lock: ${testManager?.isNavigating || false}
             const touchArea = document.getElementById('touchArea');
             const touchCounter = document.getElementById('touchCounter');
 
-            touchArea.addEventListener('touchstart', (e) => {
-                touchCounter.textContent = `${e.touches.length} touches`;
-                logTouch('TouchStart', e.touches.length);
-            });
+            // Use Touchy.js for better multi-touch support
+            if (typeof Touchy !== 'undefined') {
+                Touchy(touchArea, {
+                    one: function(hand, finger) {
+                        touchCounter.textContent = '1 touch';
+                        logTouch('Touchy: 1 finger', 1);
+                    },
+                    two: function(hand, finger1, finger2) {
+                        touchCounter.textContent = '2 touches';
+                        logTouch('Touchy: 2 fingers', 2);
+                    },
+                    three: function(hand, finger1, finger2, finger3) {
+                        touchCounter.textContent = '3 touches';
+                        logTouch('Touchy: 3 fingers', 3);
 
-            touchArea.addEventListener('touchmove', (e) => {
-                touchCounter.textContent = `${e.touches.length} touches (moving)`;
-            });
+                        // Track swipe direction for 3-finger gestures
+                        const startX = finger1.lastPoint.x;
+                        let currentX = startX;
 
-            touchArea.addEventListener('touchend', (e) => {
-                touchCounter.textContent = `${e.touches.length} touches`;
-                logTouch('TouchEnd', e.touches.length);
-            });
+                        finger1.on('move', function(point) {
+                            currentX = point.x;
+                            touchCounter.textContent = '3 touches (moving)';
+                        });
+
+                        finger1.on('end', function() {
+                            const deltaX = currentX - startX;
+                            if (Math.abs(deltaX) > 50) { // Minimum swipe distance
+                                const direction = deltaX > 0 ? 'right' : 'left';
+                                logTouch(`Touchy: 3-finger swipe ${direction}`, 3);
+
+                                // Trigger navigation if test manager exists
+                                if (testManager && testManager.handleSwipe) {
+                                    testManager.handleSwipe(direction);
+                                }
+                            }
+                        });
+                    },
+                    four: function(hand) {
+                        touchCounter.textContent = '4+ touches';
+                        logTouch('Touchy: 4+ fingers', 4);
+                    },
+                    five: function(hand) {
+                        touchCounter.textContent = '5+ touches';
+                        logTouch('Touchy: 5+ fingers', 5);
+                    }
+                });
+
+                logTouch('Touchy.js initialized', 0);
+            } else {
+                // Fallback to standard touch events if Touchy.js not loaded
+                touchArea.addEventListener('touchstart', (e) => {
+                    touchCounter.textContent = `${e.touches.length} touches`;
+                    logTouch('TouchStart', e.touches.length);
+                });
+
+                touchArea.addEventListener('touchmove', (e) => {
+                    touchCounter.textContent = `${e.touches.length} touches (moving)`;
+                });
+
+                touchArea.addEventListener('touchend', (e) => {
+                    touchCounter.textContent = `${e.touches.length} touches`;
+                    logTouch('TouchEnd', e.touches.length);
+                });
+
+                logTouch('Standard touch events (fallback)', 0);
+            }
         }
 
         function logTouch(event, count) {

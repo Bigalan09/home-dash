@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Mobile Swipe Navigation Test</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            background: #0f0f0f;
+            color: #f8f9fa;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            touch-action: pan-y; /* Allow vertical scroll but control horizontal */
+        }
+
+        .header {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #2a2a2a;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #e91e63;
+        }
+
+        .config-section {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #2a2a2a;
+            margin-bottom: 20px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .config-btn {
+            background: #2a2a2a;
+            color: #f8f9fa;
+            border: 2px solid #3a3a3a;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 50px;
+        }
+
+        .config-btn:active {
+            transform: scale(0.95);
+        }
+
+        .config-btn.active {
+            background: #e91e63;
+            border-color: #e91e63;
+        }
+
+        .swipe-area {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border: 3px dashed #e91e63;
+            border-radius: 16px;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin: 20px 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .swipe-hint {
+            font-size: 18px;
+            color: #9ca3af;
+        }
+
+        .touch-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #e91e63;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .status-section {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #2a2a2a;
+            margin-bottom: 20px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .status-card {
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #3a3a3a;
+        }
+
+        .status-label {
+            color: #9ca3af;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .status-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f8f9fa;
+        }
+
+        .log-section {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #2a2a2a;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            background: #0a0a0a;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 5px 0;
+            font-family: monospace;
+            font-size: 12px;
+            border-left: 3px solid #e91e63;
+        }
+
+        .success {
+            border-left-color: #10b981;
+        }
+
+        .warning {
+            border-left-color: #f59e0b;
+        }
+
+        .info {
+            border-left-color: #6b7280;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            flex: 1;
+            min-width: 120px;
+            background: #e91e63;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .device-info {
+            background: #2563eb;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .config-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+    <!-- Include Touchy.js -->
+    <script src="https://cdn.jsdelivr.net/gh/jairajs89/Touchy.js@master/touchy.min.js"></script>
+</head>
+<body>
+    <div class="header">
+        <h1>📱 Mobile Swipe Navigation Test</h1>
+        <p>Test multi-finger swipe navigation on mobile devices</p>
+    </div>
+
+    <div class="device-info" id="deviceInfo">
+        Detecting device...
+    </div>
+
+    <div class="config-section">
+        <h3>⚙️ Configuration</h3>
+        <div class="config-grid">
+            <button class="config-btn" onclick="setFingerCount(1)">1 Finger</button>
+            <button class="config-btn active" onclick="setFingerCount(2)">2 Fingers</button>
+            <button class="config-btn" onclick="setFingerCount(3)">3 Fingers</button>
+            <button class="config-btn" onclick="toggleTouchy()">Toggle Touchy</button>
+        </div>
+    </div>
+
+    <div class="swipe-area" id="swipeArea">
+        <div class="swipe-hint" id="swipeHint">
+            Swipe with 2 fingers to navigate
+        </div>
+        <div class="touch-indicator" id="touchIndicator" style="display: none;">
+            0 touches
+        </div>
+    </div>
+
+    <div class="status-section">
+        <h3>📊 Current Status</h3>
+        <div class="status-grid">
+            <div class="status-card">
+                <div class="status-label">Current Page</div>
+                <div class="status-value" id="currentPage">Test Page</div>
+            </div>
+            <div class="status-card">
+                <div class="status-label">Touch Count</div>
+                <div class="status-value" id="touchCount">0</div>
+            </div>
+            <div class="status-card">
+                <div class="status-label">Last Swipe</div>
+                <div class="status-value" id="lastSwipe">None</div>
+            </div>
+            <div class="status-card">
+                <div class="status-label">Navigation Ready</div>
+                <div class="status-value" id="navReady">Yes</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="action-btn" onclick="simulatePage('calendar.html')">Simulate Calendar</button>
+        <button class="action-btn" onclick="simulatePage('tasks.html')">Simulate Tasks</button>
+        <button class="action-btn" onclick="clearLog()">Clear Log</button>
+        <button class="action-btn" onclick="testNavigation()">Test Navigation</button>
+    </div>
+
+    <div class="log-section">
+        <h3>📝 Event Log</h3>
+        <div id="eventLog"></div>
+    </div>
+
+    <!-- Include the mobile swipe navigation -->
+    <script src="swipe-navigation-mobile.js"></script>
+
+    <script>
+        let eventLog = [];
+        let currentFingerCount = 2;
+        let useTouchy = true;
+        let simulatedPage = 'test.html';
+
+        // Device detection
+        function detectDevice() {
+            const info = document.getElementById('deviceInfo');
+            const ua = navigator.userAgent;
+            const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const isAndroid = /Android/.test(ua);
+            const isMobile = /Mobile|Android|iPhone|iPad/.test(ua);
+
+            let deviceType = 'Desktop';
+            if (isIOS) deviceType = 'iOS Device';
+            else if (isAndroid) deviceType = 'Android Device';
+            else if (isMobile) deviceType = 'Mobile Device';
+
+            info.innerHTML = `
+                <strong>Device:</strong> ${deviceType} |
+                <strong>Touch Points:</strong> ${navigator.maxTouchPoints || 0} |
+                <strong>Touchy.js:</strong> ${typeof Touchy !== 'undefined' ? '✅' : '❌'} |
+                <strong>Platform:</strong> ${navigator.platform}
+            `;
+        }
+
+        // Initialize device info
+        detectDevice();
+
+        function setFingerCount(count) {
+            currentFingerCount = count;
+
+            // Update button states
+            document.querySelectorAll('.config-btn').forEach(btn => {
+                if (btn.textContent.includes(count)) {
+                    btn.classList.add('active');
+                } else if (btn.textContent.includes('Finger')) {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Update hint
+            document.getElementById('swipeHint').textContent =
+                `Swipe with ${count} finger${count > 1 ? 's' : ''} to navigate`;
+
+            // Reinitialize navigation
+            if (window.swipeNav) {
+                window.swipeNav = new MobileSwipeNavigationManager({
+                    fingers: count,
+                    threshold: 50,
+                    velocity: 0.3
+                });
+
+                addLogEntry(`Reinitialized with ${count}-finger swipes`, 'info');
+            }
+        }
+
+        function toggleTouchy() {
+            useTouchy = !useTouchy;
+            const btn = event.target;
+            btn.classList.toggle('active');
+
+            addLogEntry(`Touchy.js: ${useTouchy ? 'Enabled' : 'Disabled'}`, 'warning');
+
+            // Would need to reload to fully toggle Touchy
+            if (!useTouchy) {
+                alert('Page reload required to disable Touchy.js');
+            }
+        }
+
+        function simulatePage(page) {
+            simulatedPage = page;
+            document.getElementById('currentPage').textContent = page.replace('.html', '');
+
+            // Override navigation detection
+            if (window.swipeNav) {
+                const original = window.swipeNav.handleSwipe;
+                window.swipeNav.handleSwipe = function(direction) {
+                    const mockLocation = {
+                        pathname: '/' + simulatedPage
+                    };
+
+                    let targetPage = null;
+                    const currentPage = simulatedPage;
+
+                    if (direction === 'left') {
+                        if (currentPage === 'calendar.html') {
+                            targetPage = 'tasks.html';
+                        }
+                    } else if (direction === 'right') {
+                        if (currentPage === 'tasks.html') {
+                            targetPage = 'calendar.html';
+                        }
+                    }
+
+                    if (targetPage) {
+                        addLogEntry(`Navigation: ${currentPage} → ${targetPage} (${direction} swipe)`, 'success');
+                        document.getElementById('lastSwipe').textContent = `${direction} → ${targetPage}`;
+
+                        // Show visual feedback
+                        this.showNavigationIndicator(direction, targetPage);
+                    } else {
+                        addLogEntry(`Edge reached: Cannot go ${direction} from ${currentPage}`, 'warning');
+                        this.showEdgeFeedback(direction);
+                    }
+                };
+            }
+
+            addLogEntry(`Simulated page: ${page}`, 'info');
+        }
+
+        function addLogEntry(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = {
+                time: timestamp,
+                message: message,
+                type: type
+            };
+
+            eventLog.unshift(entry);
+            eventLog = eventLog.slice(0, 10); // Keep last 10
+
+            updateLog();
+        }
+
+        function updateLog() {
+            const logDiv = document.getElementById('eventLog');
+            logDiv.innerHTML = eventLog.map(entry => `
+                <div class="log-entry ${entry.type}">
+                    [${entry.time}] ${entry.message}
+                </div>
+            `).join('');
+        }
+
+        function clearLog() {
+            eventLog = [];
+            updateLog();
+            document.getElementById('touchCount').textContent = '0';
+            document.getElementById('lastSwipe').textContent = 'None';
+        }
+
+        function testNavigation() {
+            addLogEntry('Testing navigation system...', 'info');
+
+            // Test different scenarios
+            const tests = [
+                { from: 'calendar.html', direction: 'left', expected: 'tasks.html' },
+                { from: 'tasks.html', direction: 'right', expected: 'calendar.html' },
+                { from: 'calendar.html', direction: 'right', expected: 'edge' },
+                { from: 'tasks.html', direction: 'left', expected: 'edge' }
+            ];
+
+            tests.forEach(test => {
+                simulatePage(test.from);
+
+                setTimeout(() => {
+                    if (window.swipeNav) {
+                        window.swipeNav.handleSwipe(test.direction);
+                    }
+                }, 100);
+            });
+        }
+
+        // Monitor touch events
+        const swipeArea = document.getElementById('swipeArea');
+        const touchIndicator = document.getElementById('touchIndicator');
+
+        swipeArea.addEventListener('touchstart', (e) => {
+            const count = e.touches.length;
+            document.getElementById('touchCount').textContent = count;
+            touchIndicator.style.display = 'block';
+            touchIndicator.textContent = `${count} touch${count > 1 ? 'es' : ''}`;
+
+            if (count === currentFingerCount) {
+                touchIndicator.style.background = '#10b981';
+            } else {
+                touchIndicator.style.background = '#e91e63';
+            }
+        });
+
+        swipeArea.addEventListener('touchmove', (e) => {
+            const count = e.touches.length;
+            touchIndicator.textContent = `${count} touch${count > 1 ? 'es' : ''} (moving)`;
+        });
+
+        swipeArea.addEventListener('touchend', (e) => {
+            const count = e.touches.length;
+            document.getElementById('touchCount').textContent = count;
+
+            if (count === 0) {
+                touchIndicator.style.display = 'none';
+            }
+        });
+
+        // Initial setup
+        simulatePage('calendar.html');
+        addLogEntry('Test page loaded', 'info');
+        addLogEntry(`Navigation configured for ${currentFingerCount}-finger swipes`, 'info');
+
+        // Show navigation readiness
+        setInterval(() => {
+            const ready = window.swipeNav && !window.swipeNav.isNavigating;
+            document.getElementById('navReady').textContent = ready ? 'Yes ✅' : 'No ⏳';
+        }, 100);
+    </script>
+</body>
+</html>
