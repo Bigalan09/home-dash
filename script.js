@@ -11,27 +11,41 @@ const API_CONFIG = {
 };
 
 // Fallback data for when APIs are not configured
-const FALLBACK_MESSAGE =
-  "API not configured - check CLAUDE.md for setup instructions";
+const FALLBACK_MESSAGE = "API not configured";
 
 class MissionControlDashboard {
   constructor() {
-    this.currentView = "daily"; // Default to daily view
+    this.currentView = "daily";
     this.currentDate = new Date();
     this.currentWeekStart = new Date();
     this.events = [];
     this.tasks = [];
     this.weatherForecast = null;
     this.currentWeatherView = "daily";
-    this.currentTaskView = "today"; // Default task view
+    this.currentTaskView = "today";
     this.lastActivity = Date.now();
-    this.serverTimeOffset = 0; // Time offset from server
+    this.serverTimeOffset = 0;
+
+    // Inspirational quotes array
+    this.quotes = [
+      "Push yourself, because no one else is going to do it for you.",
+      "This is hard and challenging, but that is just what I need to find it rewarding.",
+      "The harder you work for something, the greater you'll feel when you achieve it.",
+      "Wake up with determination. Go to bed with satisfaction.",
+      "Do something today that your future self will thank you for.",
+      "Little things make big days.",
+      "It's going to be hard, but hard does not mean impossible.",
+      "This is what hard feels like, and this is where most people quit.",
+      "The faster I do the hard things I avoid, the quicker I can get to the good things I want.",
+    ];
 
     this.initializeDateTime();
     this.loadAllData();
     this.setupEventListeners();
     this.startRefreshTimer();
     this.setupActivityTracking();
+    this.displayRandomQuote();
+    this.startQuoteTimer();
   }
 
   async loadAllData() {
@@ -41,11 +55,20 @@ class MissionControlDashboard {
       this.loadWeather(),
       this.loadWeatherForecast(),
     ]);
+
     this.initializeCalendarViews();
+
+    // Ensure we default to Day view and button states are correct
+    this.switchCalendarView("daily");
   }
 
   // API Methods - Real API integrations via server proxy
   async loadEvents() {
+    // Show loading state
+    const calendarLoading = document.getElementById("calendarLoading");
+    if (calendarLoading) {
+      calendarLoading.classList.remove("hidden");
+    }
     try {
       const response = await fetch(API_CONFIG.ENDPOINTS.CALENDAR);
 
@@ -78,6 +101,11 @@ class MissionControlDashboard {
     } catch (error) {
       console.error("Failed to load events:", error);
       this.events = []; // No events when API fails
+    } finally {
+      // Hide loading state
+      if (calendarLoading) {
+        calendarLoading.classList.add("hidden");
+      }
     }
   }
 
@@ -155,6 +183,15 @@ class MissionControlDashboard {
   }
 
   async loadWeather() {
+    // Show loading state
+    const weatherLoading = document.getElementById("weatherLoading");
+    const weatherContent = document.getElementById("weatherContent");
+    if (weatherLoading) {
+      weatherLoading.classList.remove("hidden");
+    }
+    if (weatherContent) {
+      weatherContent.style.display = "none";
+    }
     try {
       const response = await fetch(API_CONFIG.ENDPOINTS.WEATHER);
 
@@ -216,6 +253,14 @@ class MissionControlDashboard {
       document.getElementById("weatherIcon").textContent = "❓";
       document.getElementById("weatherDesc").textContent =
         "Weather unavailable";
+    } finally {
+      // Hide loading state and show content
+      if (weatherLoading) {
+        weatherLoading.classList.add("hidden");
+      }
+      if (weatherContent) {
+        weatherContent.style.display = "flex";
+      }
     }
   }
 
@@ -530,8 +575,8 @@ class MissionControlDashboard {
   }
 
   updateTodayButtonText() {
-    const overdueCount = this.tasks.filter(task =>
-      task.status !== "completed" && this.isTaskOverdue(task)
+    const overdueCount = this.tasks.filter(
+      (task) => task.status !== "completed" && this.isTaskOverdue(task),
     ).length;
 
     const todayText = document.getElementById("todayViewText");
@@ -562,7 +607,9 @@ class MissionControlDashboard {
     weekFromToday.setDate(weekFromToday.getDate() + 7);
 
     // Filter tasks based on current view
-    let filteredTasks = this.tasks.filter((task) => task.status !== "completed");
+    let filteredTasks = this.tasks.filter(
+      (task) => task.status !== "completed",
+    );
 
     if (this.currentTaskView === "today") {
       // Today view: show today's tasks and overdue tasks
@@ -594,21 +641,21 @@ class MissionControlDashboard {
     }
 
     container.innerHTML = sortedTasks
-      .map(
-        (task) => {
-          const isOverdue = this.isTaskOverdue(task);
-          const daysOverdue = this.getDaysOverdue(task);
-          const overdueClass = isOverdue ? "overdue" : "";
-          const overdueText = isOverdue ? ` (${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue)` : "";
+      .map((task) => {
+        const isOverdue = this.isTaskOverdue(task);
+        const daysOverdue = this.getDaysOverdue(task);
+        const overdueClass = isOverdue ? "overdue" : "";
+        const overdueText = isOverdue
+          ? ` (${daysOverdue} day${daysOverdue > 1 ? "s" : ""} overdue)`
+          : "";
 
-          return `
+        return `
             <div class="todo-item priority-${task.priority} ${overdueClass}" onclick="showTaskDetails('${task.id}')">
                 <div class="todo-title">${this.escapeHtml(task.title)}</div>
                 <div class="todo-project">${task.project} • Due: ${this.formatDate(task.due)}${overdueText}</div>
             </div>
           `;
-        },
-      )
+      })
       .join("");
 
     // Update the Today button text with overdue count
@@ -677,6 +724,10 @@ class MissionControlDashboard {
       iconElement.className = "toast-icon ti ti-x";
       toast.style.borderColor = "var(--danger)";
       iconElement.style.color = "var(--danger)";
+    } else if (type === "info") {
+      iconElement.className = "toast-icon ti ti-info-circle";
+      toast.style.borderColor = "var(--accent)";
+      iconElement.style.color = "var(--accent)";
     }
 
     // Show toast
@@ -692,7 +743,8 @@ class MissionControlDashboard {
     const container = document.getElementById("weatherForecastContainer");
 
     if (!this.weatherForecast) {
-      container.innerHTML = '<div class="no-data">Weather forecast unavailable</div>';
+      container.innerHTML =
+        '<div class="no-data">Weather forecast unavailable</div>';
       return;
     }
 
@@ -707,7 +759,8 @@ class MissionControlDashboard {
     const hourlyData = this.weatherForecast.hourly;
 
     if (!hourlyData || hourlyData.length === 0) {
-      container.innerHTML = '<div class="no-data">Hourly forecast not available</div>';
+      container.innerHTML =
+        '<div class="no-data">Hourly forecast not available</div>';
       return;
     }
 
@@ -716,24 +769,25 @@ class MissionControlDashboard {
 
     const html = `
       <div class="forecast-grid hourly-grid">
-        ${next24Hours.map((hour, index) => {
-          const date = new Date(hour.dt * 1000);
-          const time = date.toLocaleTimeString("en-GB", {
-            hour: "2-digit",
-            minute: "2-digit"
-          });
-          const temp = Math.round(hour.temp || hour.main?.temp || 0);
-          const weatherIcon = this.getWeatherIcon(
-            hour.weather[0].main,
-            hour.weather[0].icon
-          );
-          const description = hour.weather[0].description;
-          const humidity = hour.humidity || hour.main?.humidity || 0;
-          const windSpeed = hour.wind_speed || hour.wind?.speed || 0;
+        ${next24Hours
+          .map((hour, index) => {
+            const date = new Date(hour.dt * 1000);
+            const time = date.toLocaleTimeString("en-GB", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            const temp = Math.round(hour.temp || hour.main?.temp || 0);
+            const weatherIcon = this.getWeatherIcon(
+              hour.weather[0].main,
+              hour.weather[0].icon,
+            );
+            const description = hour.weather[0].description;
+            const humidity = hour.humidity || hour.main?.humidity || 0;
+            const windSpeed = hour.wind_speed || hour.wind?.speed || 0;
 
-          return `
-            <div class="forecast-item ${index === 0 ? 'current' : ''}">
-              <div class="forecast-time">${index === 0 ? 'Now' : time}</div>
+            return `
+            <div class="forecast-item ${index === 0 ? "current" : ""}">
+              <div class="forecast-time">${index === 0 ? "Now" : time}</div>
               <div class="forecast-icon">${weatherIcon}</div>
               <div class="forecast-temp">${temp}°C</div>
               <div class="forecast-desc">${description}</div>
@@ -749,7 +803,8 @@ class MissionControlDashboard {
               </div>
             </div>
           `;
-        }).join('')}
+          })
+          .join("")}
       </div>
     `;
 
@@ -760,7 +815,8 @@ class MissionControlDashboard {
     const dailyData = this.weatherForecast.daily;
 
     if (!dailyData || dailyData.length === 0) {
-      container.innerHTML = '<div class="no-data">5-day forecast not available</div>';
+      container.innerHTML =
+        '<div class="no-data">5-day forecast not available</div>';
       return;
     }
 
@@ -769,30 +825,34 @@ class MissionControlDashboard {
 
     const html = `
       <div class="forecast-grid daily-grid">
-        ${next5Days.map((day, index) => {
-          const date = new Date(day.dt * 1000);
-          const dayName = index === 0 ? 'Today' : date.toLocaleDateString("en-GB", {
-            weekday: "long"
-          });
-          const dateStr = date.toLocaleDateString("en-GB", {
-            month: "short",
-            day: "numeric"
-          });
+        ${next5Days
+          .map((day, index) => {
+            const date = new Date(day.dt * 1000);
+            const dayName =
+              index === 0
+                ? "Today"
+                : date.toLocaleDateString("en-GB", {
+                    weekday: "long",
+                  });
+            const dateStr = date.toLocaleDateString("en-GB", {
+              month: "short",
+              day: "numeric",
+            });
 
-          const tempDay = Math.round(day.temp?.day || day.temp?.max || 0);
-          const tempMin = Math.round(day.temp?.min || 0);
-          const tempMax = Math.round(day.temp?.max || day.temp?.day || 0);
+            const tempDay = Math.round(day.temp?.day || day.temp?.max || 0);
+            const tempMin = Math.round(day.temp?.min || 0);
+            const tempMax = Math.round(day.temp?.max || day.temp?.day || 0);
 
-          const weatherIcon = this.getWeatherIcon(
-            day.weather[0].main,
-            day.weather[0].icon
-          );
-          const description = day.weather[0].description;
-          const humidity = day.humidity || 0;
-          const windSpeed = day.wind_speed || 0;
+            const weatherIcon = this.getWeatherIcon(
+              day.weather[0].main,
+              day.weather[0].icon,
+            );
+            const description = day.weather[0].description;
+            const humidity = day.humidity || 0;
+            const windSpeed = day.wind_speed || 0;
 
-          return `
-            <div class="forecast-item ${index === 0 ? 'current' : ''}">
+            return `
+            <div class="forecast-item ${index === 0 ? "current" : ""}">
               <div class="forecast-day">
                 <div class="day-name">${dayName}</div>
                 <div class="day-date">${dateStr}</div>
@@ -815,7 +875,8 @@ class MissionControlDashboard {
               </div>
             </div>
           `;
-        }).join('')}
+          })
+          .join("")}
       </div>
     `;
 
@@ -838,25 +899,34 @@ class MissionControlDashboard {
   refreshData() {
     this.showRefreshIndicator();
     // Force refresh all data
-    this.loadAllData().then(() => {
-      this.showToast("Data refreshed successfully", "success");
-    }).catch(() => {
-      this.showToast("Failed to refresh data", "error");
-    });
+    this.loadAllData()
+      .then(() => {
+        this.showToast("Data refreshed successfully", "success");
+      })
+      .catch(() => {
+        this.showToast("Failed to refresh data", "error");
+      });
   }
 
   toggleScreen() {
-    // Toggle screen off/on
-    const body = document.body;
-    if (body.style.display === "none") {
-      body.style.display = "block";
-    } else {
-      body.style.display = "none";
-      // Turn back on after 10 seconds for demo purposes
-      setTimeout(() => {
-        body.style.display = "block";
-      }, 10000);
+    // Show toast instead of actually turning off screen
+    this.showToast("Screen off feature coming soon", "info");
+  }
+
+  displayRandomQuote() {
+    const quoteElement = document.getElementById("dailyQuote");
+    if (quoteElement && this.quotes.length > 0) {
+      const randomIndex = Math.floor(Math.random() * this.quotes.length);
+      const randomQuote = this.quotes[randomIndex];
+      quoteElement.textContent = `"${randomQuote}"`;
     }
+  }
+
+  startQuoteTimer() {
+    // Change quote every hour (3600000 milliseconds)
+    setInterval(() => {
+      this.displayRandomQuote();
+    }, 3600000);
   }
 
   setupActivityTracking() {
@@ -922,7 +992,7 @@ class MissionControlDashboard {
 }
 
 // Task and Event Action Functions
-window.completeTask = async function(taskId, buttonElement) {
+window.completeTask = async function (taskId, buttonElement) {
   try {
     buttonElement.disabled = true;
     buttonElement.textContent = "Completing...";
@@ -962,9 +1032,9 @@ window.completeTask = async function(taskId, buttonElement) {
     // Show user-friendly error message
     alert("Failed to complete task. Please try again.");
   }
-}
+};
 
-window.handleEventAction = async function(eventId, action, buttonElement) {
+window.handleEventAction = async function (eventId, action, buttonElement) {
   try {
     buttonElement.disabled = true;
     buttonElement.textContent =
@@ -1014,18 +1084,18 @@ window.handleEventAction = async function(eventId, action, buttonElement) {
     // Show user-friendly error message
     alert(`Failed to ${action} event. Please try again.`);
   }
-}
+};
 
 // Global functions for modal interactions
-window.showDayEvents = function(dateStr) {
+window.showDayEvents = function (dateStr) {
   const dayEvents = dashboard.events.filter((event) => event.date === dateStr);
   if (dayEvents.length === 0) return;
 
   // For now, show the first event. Could expand to show all events for the day
   window.showEventDetails(dayEvents[0].id);
-}
+};
 
-window.showEventDetails = function(eventId) {
+window.showEventDetails = function (eventId) {
   const event = dashboard.events.find((e) => e.id === eventId);
   if (!event) return;
 
@@ -1070,9 +1140,9 @@ window.showEventDetails = function(eventId) {
     `;
 
   modal.classList.add("active");
-}
+};
 
-window.showTaskDetails = function(taskId) {
+window.showTaskDetails = function (taskId) {
   const task = dashboard.tasks.find((t) => t.id === taskId);
   if (!task) return;
 
@@ -1118,14 +1188,14 @@ window.showTaskDetails = function(taskId) {
     `;
 
   modal.classList.add("active");
-}
+};
 
-window.closeModal = function(modalId) {
+window.closeModal = function (modalId) {
   document.getElementById(modalId).classList.remove("active");
-}
+};
 
 // Weather modal functions
-window.showWeatherDetails = function() {
+window.showWeatherDetails = function () {
   // Check if dashboard is initialized
   if (!dashboard) {
     console.warn("Dashboard not initialized yet");
@@ -1147,9 +1217,9 @@ window.showWeatherDetails = function() {
 
   // Render the current view
   dashboard.renderWeatherForecast();
-}
+};
 
-window.switchWeatherView = function(view) {
+window.switchWeatherView = function (view) {
   // Check if dashboard is initialized
   if (!dashboard) {
     console.warn("Dashboard not initialized yet");
@@ -1159,13 +1229,15 @@ window.switchWeatherView = function(view) {
   dashboard.currentWeatherView = view;
 
   // Update active button
-  document.querySelectorAll(".weather-view-controls .view-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.view === view);
-  });
+  document
+    .querySelectorAll(".weather-view-controls .view-btn")
+    .forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.view === view);
+    });
 
   // Render the selected view
   dashboard.renderWeatherForecast();
-}
+};
 
 // Initialize dashboard
 let dashboard;
@@ -1174,13 +1246,13 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Global functions for button handlers
-window.refreshData = function() {
+window.refreshData = function () {
   if (dashboard) {
     dashboard.refreshData();
   }
 };
 
-window.toggleScreen = function() {
+window.toggleScreen = function () {
   if (dashboard) {
     dashboard.toggleScreen();
   }

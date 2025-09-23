@@ -1,3 +1,5 @@
+// server.ts
+
 import { file } from "bun";
 
 // Load environment variables
@@ -21,7 +23,7 @@ const env = {
   PORT: process.env.PORT || 3000,
 };
 
-// Weather cache to limit API calls (30-minute cache)
+// Weather cache to limit API calls (30 minute cache)
 interface WeatherCache {
   data: any;
   timestamp: number;
@@ -31,7 +33,7 @@ let weatherCache: WeatherCache | null = null;
 let forecastCache: WeatherCache | null = null;
 const WEATHER_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
 
-// Completed events tracking (in-memory storage for demo - use database in production)
+// Completed events tracking (in memory storage for demo - use database in production)
 const completedEvents = new Set<string>();
 const dismissedEvents = new Set<string>();
 
@@ -97,7 +99,7 @@ async function handleTaskCompletion(req: Request): Promise<Response> {
         "Access-Control-Allow-Origin": "*",
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Task completion error:", error);
     return new Response(
       JSON.stringify({
@@ -162,7 +164,7 @@ async function handleEventAction(req: Request): Promise<Response> {
         },
       },
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Event action error:", error);
     return new Response(
       JSON.stringify({
@@ -178,7 +180,7 @@ async function handleEventAction(req: Request): Promise<Response> {
 }
 
 // API proxy handlers
-async function handleTodoistTasks(req: Request): Promise<Response> {
+async function handleTodoistTasks(_req: Request): Promise<Response> {
   if (
     !env.TODOIST_API_KEY ||
     env.TODOIST_API_KEY === "your_todoist_api_key_here"
@@ -210,12 +212,6 @@ async function handleTodoistTasks(req: Request): Promise<Response> {
 
     const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(
-        `Weather API Error: ${data.message || response.statusText}`,
-      );
-    }
-
     return new Response(JSON.stringify(data), {
       headers: {
         "Content-Type": "application/json",
@@ -231,7 +227,7 @@ async function handleTodoistTasks(req: Request): Promise<Response> {
   }
 }
 
-async function handleAppleCalendar(req: Request): Promise<Response> {
+async function handleAppleCalendar(_req: Request): Promise<Response> {
   try {
     const allEvents: any[] = [];
 
@@ -313,7 +309,7 @@ async function handleAppleCalendar(req: Request): Promise<Response> {
         },
       },
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Calendar error:", error);
     return new Response(
       JSON.stringify({
@@ -329,7 +325,7 @@ async function handleAppleCalendar(req: Request): Promise<Response> {
   }
 }
 
-async function handleWeather(req: Request): Promise<Response> {
+async function handleWeather(_req: Request): Promise<Response> {
   if (
     !env.OPENWEATHER_API_KEY ||
     env.OPENWEATHER_API_KEY === "your_openweather_api_key_here"
@@ -417,7 +413,7 @@ async function handleWeather(req: Request): Promise<Response> {
         },
       },
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Weather API error:", error);
     return new Response(
       JSON.stringify({
@@ -432,7 +428,7 @@ async function handleWeather(req: Request): Promise<Response> {
   }
 }
 
-async function handleWeatherForecast(req: Request): Promise<Response> {
+async function handleWeatherForecast(_req: Request): Promise<Response> {
   if (
     !env.OPENWEATHER_API_KEY ||
     env.OPENWEATHER_API_KEY === "your_openweather_api_key_here"
@@ -493,16 +489,16 @@ async function handleWeatherForecast(req: Request): Promise<Response> {
       data = await response.json();
     }
 
-    // If both One Call APIs fail, try 5-day forecast API
+    // If both One Call APIs fail, try 5 day forecast API
     if (!response.ok) {
-      console.log("Falling back to 5-day forecast API");
+      console.log("Falling back to 5 day forecast API");
       response = await fetch(
         `https://api.openweathermap.org/data/2.5/forecast?lat=${env.WEATHER_LAT}&lon=${env.WEATHER_LON}&appid=${env.OPENWEATHER_API_KEY}&units=${env.WEATHER_UNITS}`,
       );
       const forecastData = await response.json();
 
       if (response.ok) {
-        // Transform 5-day forecast to match One Call format
+        // Transform 5 day forecast to match One Call format
         data = {
           current: forecastData.list[0],
           hourly: forecastData.list.slice(0, 24), // First 24 hours
@@ -541,7 +537,7 @@ async function handleWeatherForecast(req: Request): Promise<Response> {
         },
       },
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Weather forecast API error:", error);
     return new Response(
       JSON.stringify({
@@ -556,7 +552,7 @@ async function handleWeatherForecast(req: Request): Promise<Response> {
   }
 }
 
-async function handleTime(req: Request): Promise<Response> {
+async function handleTime(_req: Request): Promise<Response> {
   // Try different time API endpoints with retry logic
   const timeEndpoints = [
     "https://worldtimeapi.org/api/timezone/Europe/London",
@@ -584,7 +580,7 @@ async function handleTime(req: Request): Promise<Response> {
           "Access-Control-Allow-Origin": "*",
         },
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Time API endpoint ${i + 1} failed:`, error.message);
       if (i === timeEndpoints.length - 1) {
         // Last endpoint failed, return fallback
@@ -624,7 +620,7 @@ function parseICSData(icsData: string, sourceName: string = "Unknown"): any[] {
       currentEvent = {};
     } else if (trimmedLine === "END:VEVENT" && currentEvent) {
       if (currentEvent.summary && currentEvent.dtstart) {
-        // Check if this is an all-day event
+        // Check if this is an all day event
         const isAllDay =
           currentEvent.dtstartType === "DATE" ||
           (!currentEvent.dtstart.includes("T") &&
@@ -688,7 +684,7 @@ function parseICSData(icsData: string, sourceName: string = "Unknown"): any[] {
   return events;
 }
 
-// Helper function to group 5-day forecast by day
+// Helper function to group 5 day forecast by day
 function groupForecastByDay(forecastList: any[]): any[] {
   const dailyData: { [key: string]: any[] } = {};
 
@@ -703,7 +699,7 @@ function groupForecastByDay(forecastList: any[]): any[] {
   return Object.entries(dailyData)
     .slice(0, 5)
     .map(([date, items]) => {
-      // Get mid-day item for daily summary or first item if no mid-day available
+      // Get mid day item for daily summary or first item if no mid day available
       const midDayItem =
         items.find((item) => {
           const hour = new Date(item.dt * 1000).getHours();
@@ -760,12 +756,7 @@ function formatICSTime(icsDate: string): string {
     const hours = timePart.substring(0, 2);
     const minutes = timePart.substring(2, 4);
 
-    // Convert to 12-hour format if preferred, or keep 24-hour
-    const hour24 = parseInt(hours, 10);
-    const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
-    const ampm = hour24 >= 12 ? "PM" : "AM";
-
-    // Return 24-hour format for consistency with dashboard theme
+    // Return 24 hour format for consistency with dashboard theme
     return `${hours}:${minutes}`;
   }
 
@@ -783,7 +774,7 @@ function calculateDuration(
   if (isAllDay) return "All day";
 
   try {
-    // Handle both date-only and datetime formats
+    // Handle both date only and datetime formats
     let startTime: Date;
     let endTime: Date;
 
@@ -796,7 +787,7 @@ function calculateDuration(
         ),
       );
     } else {
-      // Date-only format: YYYYMMDD
+      // Date only format: YYYYMMDD
       startTime = new Date(start.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3"));
     }
 
@@ -809,7 +800,7 @@ function calculateDuration(
         ),
       );
     } else {
-      // Date-only format: YYYYMMDD
+      // Date only format: YYYYMMDD
       endTime = new Date(end.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3"));
     }
 
@@ -838,10 +829,27 @@ function calculateDuration(
   }
 }
 
+// Simple content type map for static files
+const contentTypes: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".txt": "text/plain; charset=utf-8",
+};
+
 const server = Bun.serve({
   port: Number(env.PORT),
-  fetch(req) {
+  async fetch(req) {
     const url = new URL(req.url);
+
+    // Normalise path to be tolerant of trailing slashes
+    const path = url.pathname.replace(/\/+$/, "") || "/";
 
     // Handle CORS preflight requests
     if (req.method === "OPTIONS") {
@@ -857,46 +865,59 @@ const server = Bun.serve({
     }
 
     // API endpoints
-    if (url.pathname === "/api/tasks") {
+    if (path === "/api/tasks") {
       return handleTodoistTasks(req);
     }
 
-    if (url.pathname === "/api/tasks/complete") {
+    if (path === "/api/tasks/complete") {
       return handleTaskCompletion(req);
     }
 
-    if (url.pathname === "/api/events/action") {
+    if (path === "/api/events/action") {
       return handleEventAction(req);
     }
 
-    if (url.pathname === "/api/calendar") {
+    if (path === "/api/calendar") {
       return handleAppleCalendar(req);
     }
 
-    if (url.pathname === "/api/weather") {
+    if (path === "/api/weather") {
       return handleWeather(req);
     }
 
-    if (url.pathname === "/api/weather/forecast") {
+    if (path === "/api/weather/forecast") {
       return handleWeatherForecast(req);
     }
 
-    if (url.pathname === "/api/time") {
+    if (path === "/api/time") {
       return handleTime(req);
     }
 
     // Serve index.html for root path
-    if (url.pathname === "/" || url.pathname === "/index.html") {
-      return new Response(file("./index.html"));
+    if (path === "/" || path === "/index.html") {
+      return new Response(file("./index.html"), {
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
     }
 
     // Serve static files
     const filePath = `.${url.pathname}`;
-    const fileExists = Bun.file(filePath).exists();
+    const blob = Bun.file(filePath);
 
-    if (fileExists) {
-      return new Response(file(filePath));
+    if (await blob.exists()) {
+      const ext =
+        filePath.lastIndexOf(".") >= 0
+          ? filePath.substring(filePath.lastIndexOf("."))
+          : "";
+      const type = contentTypes[ext] || "application/octet-stream";
+      return new Response(blob, { headers: { "Content-Type": type } });
     }
+
+    // Optional SPA fallback: uncomment to route unknown paths to index.html
+    // return new Response(file("./index.html"), {
+    //   status: 200,
+    //   headers: { "Content-Type": "text/html; charset=utf-8" },
+    // });
 
     // 404 for missing files
     return new Response("Not Found", { status: 404 });
