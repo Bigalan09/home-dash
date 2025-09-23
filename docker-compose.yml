@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Nginx web server for static files
@@ -38,6 +38,9 @@ services:
       - TIME_API_URL=${TIME_API_URL:-http://worldtimeapi.org/api/timezone/Europe/London}
       - PORT=3001
       - NODE_ENV=${NODE_ENV:-production}
+    volumes:
+      - dashboard-data:/app/data # Persistent data volume
+      - ./.env:/app/.env:ro # Environment file
     expose:
       - "3001"
     restart: unless-stopped
