@@ -78,25 +78,25 @@ services:
       start_period: 40s
 
   # Redis Commander web UI
-  redis_commander:
-    image: ghcr.io/joeferner/redis-commander:latest
-    container_name: homedashboard-redis-commander
-    ports:
-      - "${REDIS_COMMANDER_PORT:-8081}:8081"
-    environment:
-      # Format label:host:port:dbIndex:password
-      REDIS_HOSTS: "local:redis:6379"
-      # Optional basic auth for the UI
-      # HTTP_USER: ${REDIS_COMMANDER_USER:-}
-      # HTTP_PASSWORD: ${REDIS_COMMANDER_PASSWORD:-}
-    depends_on:
-      - redis
-    restart: unless-stopped
-    networks:
-      - dashboard-network
-    labels:
-      - "com.homedashboard.service=redis-commander"
-      - "com.homedashboard.description=Web UI for Redis"
+  # redis_commander:
+  #   image: ghcr.io/joeferner/redis-commander:latest
+  #   container_name: homedashboard-redis-commander
+  #   ports:
+  #     - "${REDIS_COMMANDER_PORT:-8081}:8081"
+  #   environment:
+  #     # Format label:host:port:dbIndex:password
+  #     REDIS_HOSTS: "local:redis:6379"
+  #     # Optional basic auth for the UI
+  #     # HTTP_USER: ${REDIS_COMMANDER_USER:-}
+  #     # HTTP_PASSWORD: ${REDIS_COMMANDER_PASSWORD:-}
+  #   depends_on:
+  #     - redis
+  #   restart: unless-stopped
+  #   networks:
+  #     - dashboard-network
+  #   labels:
+  #     - "com.homedashboard.service=redis-commander"
+  #     - "com.homedashboard.description=Web UI for Redis"
 
 networks:
   dashboard-network:

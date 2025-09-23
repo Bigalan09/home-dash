@@ -94,10 +94,6 @@ class MissionControlDashboard {
         attendees: event.attendees || [],
         priority: event.priority || "medium",
       }));
-
-      console.log(
-        `Loaded ${this.events.length} calendar events from multiple sources`,
-      );
     } catch (error) {
       console.error("Failed to load events:", error);
       this.events = []; // No events when API fails
@@ -127,14 +123,6 @@ class MissionControlDashboard {
         return;
       }
 
-      // Debug logging to help with future troubleshooting
-      console.log("Tasks data received:", {
-        isArray: Array.isArray(tasksData),
-        type: typeof tasksData,
-        keys: typeof tasksData === "object" ? Object.keys(tasksData) : [],
-        structure: tasksData,
-      });
-
       // Handle both array format (direct API response) and object format (cached response)
       let tasksArray = tasksData;
       if (!Array.isArray(tasksData)) {
@@ -142,7 +130,6 @@ class MissionControlDashboard {
         // 1. A cached response with metadata
         // 2. An array that got spread into an object with numeric indices
         if (tasksData.tasks && Array.isArray(tasksData.tasks)) {
-          console.log("Using nested tasks array");
           tasksArray = tasksData.tasks;
         } else {
           // Convert object with numeric indices back to array
@@ -151,22 +138,14 @@ class MissionControlDashboard {
             (key) => !isNaN(parseInt(key)),
           );
           if (keys.length > 0) {
-            console.log(
-              "Converting object with numeric indices to array, found",
-              keys.length,
-              "tasks",
-            );
             tasksArray = keys
               .map((key) => tasksData[key])
               .filter((item) => item && typeof item === "object");
           } else {
-            console.warn("No valid task data found in response");
             tasksArray = [];
           }
         }
       }
-
-      console.log("Final tasks array:", tasksArray.length, "tasks");
 
       // Convert Todoist API format to our format
       this.tasks = tasksArray.map((task, index) => ({
@@ -281,13 +260,6 @@ class MissionControlDashboard {
         description.charAt(0).toUpperCase() + description.slice(1);
 
       // Log cache status
-      if (data.cached) {
-        console.log(
-          `Weather data served from cache (${data.cache_age_minutes} minutes old)`,
-        );
-      } else {
-        console.log("Fresh weather data fetched from API");
-      }
     } catch (error) {
       console.error("Failed to load weather:", error);
       document.getElementById("temperature").textContent = "--°C";
@@ -340,16 +312,6 @@ class MissionControlDashboard {
       }
 
       this.weatherForecast = data;
-      console.log("Weather forecast loaded successfully");
-
-      // Log cache status
-      if (data.cached) {
-        console.log(
-          `Weather forecast served from cache (${data.cache_age_minutes} minutes old)`,
-        );
-      } else {
-        console.log("Fresh weather forecast fetched from API");
-      }
     } catch (error) {
       console.error("Failed to load weather forecast:", error);
       this.weatherForecast = null;
@@ -372,7 +334,6 @@ class MissionControlDashboard {
         if (timeData.datetime) {
           this.serverTime = new Date(timeData.datetime);
           this.serverTimeOffset = this.serverTime.getTime() - Date.now();
-          console.log("Time synced with server");
         }
       }
     } catch (error) {
@@ -1060,8 +1021,6 @@ window.completeTask = async function (taskId, buttonElement) {
       setTimeout(() => {
         dashboard.loadTasks();
       }, 100);
-
-      console.log(`Task ${taskId} completed successfully`);
     } else {
       throw new Error(result.error || "Unknown error");
     }
@@ -1112,8 +1071,6 @@ window.handleEventAction = async function (eventId, action, buttonElement) {
 
       // Close modal if open
       closeModal("eventModal");
-
-      console.log(`Event ${eventId} ${action}d successfully`);
     } else {
       throw new Error(result.error || "Unknown error");
     }
