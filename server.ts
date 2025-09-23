@@ -25,14 +25,33 @@ const env = {
   REDIS_URL: process.env.REDIS_URL || "redis://localhost:6379",
 };
 
-// Redis client setup
-let redis: Redis | null = null;
+let redis /** @type {Redis | null} */ = null;
 
 async function initRedis() {
-  try {
-    redis = new Redis(env.REDIS_URL, {
+  const url = process.env.REDIS_URL; // or your env loader
+  if (!url) {
+    console.warn("REDIS_URL not set, using in memory cache");
+    redis = null;
+    return false;
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = (ok) => {
+      if (!settled) {
+        settled = true;
+        clearTimeout(giveUpTimer);
+        resolve(ok);
+      }
+    };
+
+    redis = new Redis(url, {
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => {
+        if (times > 15) {
+          console.log("Redis connection failed after 15 retries");
+          return null;
+        }
         const delay = Math.min(times * 50, 2000);
         console.log(`Redis connection retry #${times}, waiting ${delay}ms`);
         return delay;
@@ -43,29 +62,44 @@ async function initRedis() {
       },
     });
 
+    const giveUpTimer = setTimeout(() => {
+      console.error("Redis initialisation timed out, using in memory cache");
+      try {
+        redis?.disconnect();
+      } catch {}
+      redis = null;
+      settle(false);
+    }, 60_000); // one minute cap
+
+    redis.once("ready", async () => {
+      console.log("Redis connected");
+      try {
+        await redis.ping();
+        settle(true);
+      } catch (err) {
+        console.error("Redis ping failed:", err);
+        try {
+          redis.disconnect();
+        } catch {}
+        redis = null;
+        settle(false);
+      }
+    });
+
+    redis.once("end", () => {
+      console.error("Redis connection ended, using in memory cache");
+      redis = null;
+      settle(false);
+    });
+
     redis.on("error", (err) => {
       console.error("Redis error:", err);
     });
-
-    redis.on("connect", () => {
-      console.log("✅ Redis connected successfully");
-    });
-
-    // Test connection
-    await redis.ping();
-    return true;
-  } catch (error) {
-    console.error(
-      "Failed to connect to Redis, falling back to in-memory cache:",
-      error,
-    );
-    redis = null;
-    return false;
-  }
+  });
 }
 
-// Initialize Redis on startup
-initRedis();
+// start without blocking the rest of the module
+void initRedis();
 
 // Cache configuration
 const CACHE_DURATIONS = {
