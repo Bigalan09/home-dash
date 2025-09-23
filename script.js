@@ -127,8 +127,49 @@ class MissionControlDashboard {
         return;
       }
 
+      // Debug logging to help with future troubleshooting
+      console.log("Tasks data received:", {
+        isArray: Array.isArray(tasksData),
+        type: typeof tasksData,
+        keys: typeof tasksData === "object" ? Object.keys(tasksData) : [],
+        structure: tasksData,
+      });
+
+      // Handle both array format (direct API response) and object format (cached response)
+      let tasksArray = tasksData;
+      if (!Array.isArray(tasksData)) {
+        // If tasksData is an object, it might be:
+        // 1. A cached response with metadata
+        // 2. An array that got spread into an object with numeric indices
+        if (tasksData.tasks && Array.isArray(tasksData.tasks)) {
+          console.log("Using nested tasks array");
+          tasksArray = tasksData.tasks;
+        } else {
+          // Convert object with numeric indices back to array
+          // This handles when server does {...arrayData} which converts array to object
+          const keys = Object.keys(tasksData).filter(
+            (key) => !isNaN(parseInt(key)),
+          );
+          if (keys.length > 0) {
+            console.log(
+              "Converting object with numeric indices to array, found",
+              keys.length,
+              "tasks",
+            );
+            tasksArray = keys
+              .map((key) => tasksData[key])
+              .filter((item) => item && typeof item === "object");
+          } else {
+            console.warn("No valid task data found in response");
+            tasksArray = [];
+          }
+        }
+      }
+
+      console.log("Final tasks array:", tasksArray.length, "tasks");
+
       // Convert Todoist API format to our format
-      this.tasks = tasksData.map((task, index) => ({
+      this.tasks = tasksArray.map((task, index) => ({
         id: task.id || index + 1,
         title: task.content || task.title || "Untitled Task",
         project: this.getProjectName(task.project_id) || "General",
