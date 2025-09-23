@@ -48,6 +48,19 @@ class MissionControlDashboard {
     this.startQuoteTimer();
   }
 
+  // Temperature color mapping function
+  getTemperatureColor(temp) {
+    if (temp < 0) return "#87CEEB"; // Ice blue
+    if (temp < 5) return "#ADD8E6"; // Light blue
+    if (temp < 10) return "#4169E1"; // Royal blue
+    if (temp < 15) return "#008080"; // Teal
+    if (temp < 20) return "#32CD32"; // Lime green
+    if (temp < 25) return "#FFD700"; // Gold/yellow
+    if (temp < 30) return "#FF8C00"; // Dark orange/amber
+    if (temp < 35) return "#FF4500"; // Orange red
+    return "#8B0000"; // Dark red
+  }
+
   async loadAllData() {
     await Promise.all([
       this.loadEvents(),
@@ -226,6 +239,8 @@ class MissionControlDashboard {
         console.warn("Weather API not configured:", data.error);
         // Fallback to static data
         document.getElementById("temperature").textContent = "18°C";
+        document.getElementById("temperature").style.color =
+          this.getTemperatureColor(18);
         document.getElementById("weatherIcon").textContent = "🌤️";
         document.getElementById("weatherDesc").textContent = "Partly Cloudy";
         return;
@@ -255,6 +270,8 @@ class MissionControlDashboard {
       }
 
       document.getElementById("temperature").textContent = `${temp}°C`;
+      document.getElementById("temperature").style.color =
+        this.getTemperatureColor(temp);
       document.getElementById("weatherIcon").textContent = weatherIcon;
       document.getElementById("weatherDesc").textContent =
         description.charAt(0).toUpperCase() + description.slice(1);
@@ -791,7 +808,7 @@ class MissionControlDashboard {
             <div class="forecast-item ${index === 0 ? "current" : ""}">
               <div class="forecast-time">${index === 0 ? "Now" : time}</div>
               <div class="forecast-icon">${weatherIcon}</div>
-              <div class="forecast-temp">${temp}°C</div>
+              <div class="forecast-temp" style="color: ${this.getTemperatureColor(temp)}">${temp}°C</div>
               <div class="forecast-desc">${description}</div>
               <div class="forecast-details">
                 <div class="detail-item">
@@ -861,8 +878,8 @@ class MissionControlDashboard {
               </div>
               <div class="forecast-icon">${weatherIcon}</div>
               <div class="forecast-temps">
-                <div class="temp-high">${tempMax}°C</div>
-                <div class="temp-low">${tempMin}°C</div>
+                <div class="temp-high" style="color: ${this.getTemperatureColor(tempMax)}">${tempMax}°C</div>
+                <div class="temp-low" style="color: ${this.getTemperatureColor(tempMin)}">${tempMin}°C</div>
               </div>
               <div class="forecast-desc">${description}</div>
               <div class="forecast-details">
