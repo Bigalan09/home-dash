@@ -2,20 +2,23 @@
 
 /* Theme Contract - Custom Properties */
 :root {
+    --width: 1280px;
+    --height: 690px;
+
     /* Core colors - Modern Home Dashboard Palette */
     --bg: #fafbfc;
     --bg-elev: #ffffff;
     --text: #1a202c;
     --text-muted: #718096;
-    --accent: #4299e1;           /* Calming blue primary */
-    --accent-hover: #3182ce;     /* Darker blue hover */
-    --accent-weak: #bee3f8;      /* Light blue tint */
-    --secondary: #48bb78;        /* Fresh green secondary */
+    --accent: #4299e1; /* Calming blue primary */
+    --accent-hover: #3182ce; /* Darker blue hover */
+    --accent-weak: #bee3f8; /* Light blue tint */
+    --secondary: #48bb78; /* Fresh green secondary */
     --border: #e2e8f0;
-    --focus: #4299e1;            /* Blue focus (same as accent) */
-    --success: #48bb78;          /* Green success */
-    --warning: #ed8936;          /* Warm orange warning */
-    --danger: #f56565;           /* Soft red danger */
+    --focus: #4299e1; /* Blue focus (same as accent) */
+    --success: #48bb78; /* Green success */
+    --warning: #ed8936; /* Warm orange warning */
+    --danger: #f56565; /* Soft red danger */
 
     /* Surfaces */
     --card: #ffffff;
@@ -28,7 +31,7 @@
     --fs-md: 1rem;
     --fs-lg: 1.125rem;
     --fs-xl: 1.25rem;
-    --fs-xxl: 2.2rem;            /* Time display */
+    --fs-xxl: 2.2rem; /* Time display */
 
     /* Borders & effects */
     --border-thin: 1px;
@@ -41,16 +44,24 @@
     --radius-md: 8px;
     --radius-lg: 12px;
 
+    /* Gap sizes */
+    --gap-xxs: 0.066rem;
+    --gap-xs: 0.25rem;
+    --gap-sm: 0.5rem;
+    --gap-md: 1rem;
+    --gap-lg: 1.5rem;
+    --gap-xl: 2rem;
+
     /* Motions */
-    --easing: cubic-bezier(.2,.8,.2,1);
+    --easing: cubic-bezier(0.2, 0.8, 0.2, 1);
     --dur-fast: 120ms;
     --dur-med: 200ms;
     --dur-slow: 300ms;
 
     /* Priority colors */
-    --priority-1: var(--danger);   /* High - soft red */
-    --priority-2: var(--warning);  /* Medium - warm orange */
-    --priority-3: var(--accent);   /* Low - blue accent */
+    --priority-1: var(--danger); /* High - soft red */
+    --priority-2: var(--warning); /* Medium - warm orange */
+    --priority-3: var(--accent); /* Low - blue accent */
     --priority-4: var(--text-muted); /* Lowest - muted grey */
 }
 
@@ -61,7 +72,13 @@
 }
 
 body {
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family:
+        "Inter",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        sans-serif;
     background: var(--bg);
     color: var(--text);
     height: 100vh;
@@ -70,8 +87,8 @@ body {
     touch-action: manipulation;
     user-select: none;
     position: relative;
-    max-width: 1280px;
-    max-height: 720px;
+    max-width: var(--width);
+    max-height: var(--height);
     margin: 0 auto;
 }
 
@@ -97,12 +114,12 @@ body::before {
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto 1fr;
-    gap: 12px;
+    gap: var(--gap-sm);
     padding: 12px;
     height: 100vh;
-    max-height: 690px;
+    max-height: calc(var(--height) - 20px);
     width: 100%;
-    max-width: 1280px;
+    max-width: var(--width);
     position: relative;
     z-index: 1;
     margin: 0 auto;
@@ -122,14 +139,8 @@ body::before {
     box-shadow: var(--shadow-sm);
 }
 
-/* Removed scanning animation for minimalist design */
-
-/* Removed scan animation */
-
 .time-section {
     text-align: center;
-    position: relative;
-    z-index: 2;
     flex: 1;
 }
 
@@ -152,13 +163,9 @@ body::before {
 }
 
 .weather-section {
-    position: absolute;
-    top: 16px;
-    right: 20px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    z-index: 2;
+    gap: var(--gap-sm);
 }
 
 .weather-icon {
@@ -186,12 +193,8 @@ body::before {
 }
 
 .system-controls {
-    position: absolute;
-    top: 16px;
-    left: 20px;
     display: flex;
-    gap: 8px;
-    z-index: 2;
+    gap: var(--gap-sm);
 }
 
 .system-btn {
@@ -236,8 +239,7 @@ body::before {
     margin: 4px auto 0 auto;
     width: 5rem;
     display: flex;
-    gap: 6px;
-    z-index: 1000;
+    gap: var(--gap-sm);
     opacity: 0;
     transition: opacity var(--dur-slow) var(--easing);
     pointer-events: none;
@@ -276,10 +278,6 @@ body::before {
     box-shadow: var(--shadow-sm);
 }
 
-/* Removed top scanning animation for minimalist design */
-
-/* Removed topScan animation */
-
 .card-header {
     display: flex;
     align-items: center;
@@ -293,7 +291,7 @@ body::before {
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gap-sm);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--accent);
@@ -305,7 +303,7 @@ body::before {
 
 .view-controls {
     display: flex;
-    gap: 4px;
+    gap: var(--gap-sm);
 }
 
 .view-btn {
@@ -696,7 +694,7 @@ body::before {
 .weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
+    gap: var(--gap-xxs);
     margin-bottom: 8px;
     background: var(--border);
     border-radius: var(--radius-sm);
@@ -718,7 +716,7 @@ body::before {
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
+    gap: var(--gap-xxs);
     background: var(--border);
     border-radius: var(--radius-md);
     overflow: hidden;
@@ -788,7 +786,7 @@ body::before {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: var(--gap-xxs);
     overflow: hidden;
 }
 
@@ -847,7 +845,7 @@ body::before {
 
     .dashboard {
         /* Optimize grid for Pi portrait orientation */
-        gap: 10px;
+        gap: var(--gap-sm);
         padding: 10px;
         grid-template-rows: auto 1fr 1fr;
     }
@@ -925,7 +923,7 @@ body::before {
 
     .header {
         flex-direction: column;
-        gap: 12px;
+        gap: var(--gap-sm);
         text-align: center;
     }
 
@@ -968,7 +966,7 @@ body::before {
 
     .header {
         flex-direction: column;
-        gap: 8px;
+        gap: var(--gap-sm);
         text-align: center;
     }
 
@@ -984,7 +982,7 @@ body::before {
 /* Action Buttons */
 .action-buttons {
     display: flex;
-    gap: 8px;
+    gap: var(--gap-sm);
     margin-top: 8px;
     opacity: 0;
     transition: opacity var(--dur-med) var(--easing);
@@ -1071,7 +1069,7 @@ body::before {
 
 .weather-view-controls {
     display: flex;
-    gap: 8px;
+    gap: var(--gap-sm);
     margin-bottom: 20px;
     justify-content: center;
 }
@@ -1079,14 +1077,14 @@ body::before {
 .weather-view-controls .view-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--gap-sm);
     min-width: 100px;
     justify-content: center;
 }
 
 .forecast-grid {
     display: grid;
-    gap: 12px;
+    gap: var(--gap-sm);
     max-height: 400px;
     overflow-y: auto;
     scrollbar-width: none;
@@ -1211,7 +1209,7 @@ body::before {
 .detail-item {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--gap-sm);
     font-size: 0.7rem;
     opacity: 0.8;
     color: var(--text-muted);
@@ -1280,7 +1278,7 @@ body::before {
 .toast-content {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gap-sm);
 }
 
 .toast-icon {
