@@ -611,6 +611,11 @@ class MissionControlDashboard {
   renderTasks() {
     const container = document.getElementById("todosContainer");
 
+    // Defensive check: return early if container doesn't exist (e.g., on calendar.html)
+    if (!container) {
+      return;
+    }
+
     if (!this.tasks || this.tasks.length === 0) {
       container.innerHTML = '<div class="no-data">No active missions</div>';
       this.updateTodayButtonText();

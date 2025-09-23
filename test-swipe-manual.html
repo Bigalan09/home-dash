@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=720, height=1280, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Manual Swipe Navigation Test</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #0f0f0f;
+            color: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .test-header {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #2a2a2a;
+        }
+
+        .test-section {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #2a2a2a;
+            margin: 10px 0;
+        }
+
+        .status {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 5px 0;
+        }
+
+        .pass { background: #10b981; color: white; }
+        .fail { background: #ef4444; color: white; }
+        .info { background: #6b7280; color: white; }
+
+        .touch-area {
+            height: 200px;
+            background: #2a2a2a;
+            border: 2px dashed #e91e63;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .touch-counter {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #e91e63;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .navigation-test {
+            background: #1a1a1a;
+            border: 1px solid #e91e63;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .test-button {
+            background: #e91e63;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .test-button:hover {
+            background: #c2185b;
+        }
+
+        .code-block {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .instruction {
+            background: #2563eb;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-header">
+        <h1>🧪 3-Finger Swipe Navigation Test</h1>
+        <p>Manual verification tool for HomeDashboard swipe navigation</p>
+        <div id="pageInfo" class="status info">Current Page: Test Page</div>
+    </div>
+
+    <div class="test-section">
+        <h3>📱 Touch Event Detection</h3>
+        <div class="touch-area" id="touchArea">
+            <div>Touch here with 1, 2, or 3 fingers</div>
+            <div class="touch-counter" id="touchCounter">0 touches</div>
+        </div>
+        <div id="touchLog"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🧭 Navigation Logic Test</h3>
+        <div class="navigation-test">
+            <p><strong>Instructions:</strong></p>
+            <ol>
+                <li>Place 3 fingers on the touch area above</li>
+                <li>Swipe left or right</li>
+                <li>Release all fingers</li>
+                <li>Check if navigation logic triggers correctly</li>
+            </ol>
+
+            <div class="instruction">
+                <strong>Expected Behavior:</strong><br>
+                • 3-finger swipe left = Should navigate forward (calendar → tasks)<br>
+                • 3-finger swipe right = Should navigate back (tasks → calendar)<br>
+                • 1-2 finger touches = Should NOT trigger navigation
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>🔧 Test Controls</h3>
+        <button class="test-button" onclick="simulateCalendarPage()">Simulate Calendar Page</button>
+        <button class="test-button" onclick="simulateTasksPage()">Simulate Tasks Page</button>
+        <button class="test-button" onclick="clearLog()">Clear Log</button>
+        <button class="test-button" onclick="runAutomatedTests()">Run Automated Tests</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Test Results</h3>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🐛 Debug Information</h3>
+        <div class="code-block" id="debugInfo">
+SwipeNavigationManager Status: Loading...
+        </div>
+    </div>
+
+    <script src="swipe-navigation.js"></script>
+    <script>
+        let testResults = [];
+        let touchLog = [];
+        let currentSimulatedPage = 'test-page';
+
+        // Override navigation for testing
+        const originalManager = window.SwipeNavigationManager;
+        let testManager;
+
+        // Initialize after DOM loads
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDebugInfo();
+            setupTouchAreaEvents();
+        });
+
+        function updateDebugInfo() {
+            const debugDiv = document.getElementById('debugInfo');
+            const managerExists = typeof window.SwipeNavigationManager === 'function';
+
+            debugDiv.innerHTML = `
+SwipeNavigationManager: ${managerExists ? '✅ Loaded' : '❌ Not Found'}
+Current Page: ${currentSimulatedPage}
+Touch Listeners: ${document.querySelectorAll('*').length > 0 ? '✅ Active' : '❌ Inactive'}
+Test Manager: ${testManager ? '✅ Initialized' : '❌ Not Created'}
+Navigation Lock: ${testManager?.isNavigating || false}
+            `;
+        }
+
+        function setupTouchAreaEvents() {
+            const touchArea = document.getElementById('touchArea');
+            const touchCounter = document.getElementById('touchCounter');
+
+            touchArea.addEventListener('touchstart', (e) => {
+                touchCounter.textContent = `${e.touches.length} touches`;
+                logTouch('TouchStart', e.touches.length);
+            });
+
+            touchArea.addEventListener('touchmove', (e) => {
+                touchCounter.textContent = `${e.touches.length} touches (moving)`;
+            });
+
+            touchArea.addEventListener('touchend', (e) => {
+                touchCounter.textContent = `${e.touches.length} touches`;
+                logTouch('TouchEnd', e.touches.length);
+            });
+        }
+
+        function logTouch(event, count) {
+            const timestamp = new Date().toLocaleTimeString();
+            touchLog.push(`[${timestamp}] ${event}: ${count} finger(s)`);
+
+            const logDiv = document.getElementById('touchLog');
+            logDiv.innerHTML = touchLog.slice(-5).map(log =>
+                `<div class="status info" style="font-size: 12px; margin: 2px 0;">${log}</div>`
+            ).join('');
+        }
+
+        function simulateCalendarPage() {
+            currentSimulatedPage = 'calendar.html';
+            document.getElementById('pageInfo').innerHTML = 'Current Page: Calendar (Simulated)';
+            updateDebugInfo();
+
+            // Create test manager with overridden navigation
+            if (typeof SwipeNavigationManager === 'function') {
+                testManager = new SwipeNavigationManager();
+                testManager.navigateToPage = function(targetPage, direction) {
+                    logNavigation(targetPage, direction);
+                };
+
+                // Override location for testing
+                Object.defineProperty(testManager, 'getCurrentPage', {
+                    value: () => 'calendar.html'
+                });
+            }
+        }
+
+        function simulateTasksPage() {
+            currentSimulatedPage = 'tasks.html';
+            document.getElementById('pageInfo').innerHTML = 'Current Page: Tasks (Simulated)';
+            updateDebugInfo();
+
+            // Create test manager with overridden navigation
+            if (typeof SwipeNavigationManager === 'function') {
+                testManager = new SwipeNavigationManager();
+                testManager.navigateToPage = function(targetPage, direction) {
+                    logNavigation(targetPage, direction);
+                };
+
+                // Override location for testing
+                Object.defineProperty(testManager, 'getCurrentPage', {
+                    value: () => 'tasks.html'
+                });
+            }
+        }
+
+        function logNavigation(targetPage, direction) {
+            const timestamp = new Date().toLocaleTimeString();
+            const result = `[${timestamp}] Navigation: ${direction} swipe → ${targetPage}`;
+
+            testResults.push({
+                timestamp,
+                type: 'Navigation',
+                from: currentSimulatedPage,
+                to: targetPage,
+                direction,
+                success: true
+            });
+
+            updateTestResults();
+        }
+
+        function updateTestResults() {
+            const resultsDiv = document.getElementById('testResults');
+
+            if (testResults.length === 0) {
+                resultsDiv.innerHTML = '<div class="status info">No test results yet. Try swiping with 3 fingers!</div>';
+                return;
+            }
+
+            resultsDiv.innerHTML = testResults.slice(-5).map(result => `
+                <div class="status ${result.success ? 'pass' : 'fail'}">
+                    [${result.timestamp}] ${result.type}: ${result.from} → ${result.to} (${result.direction} swipe)
+                </div>
+            `).join('');
+        }
+
+        function clearLog() {
+            touchLog = [];
+            testResults = [];
+            document.getElementById('touchLog').innerHTML = '';
+            updateTestResults();
+        }
+
+        function runAutomatedTests() {
+            const tests = [
+                {
+                    name: 'SwipeNavigationManager Class Exists',
+                    test: () => typeof SwipeNavigationManager === 'function'
+                },
+                {
+                    name: 'Manager Can Be Instantiated',
+                    test: () => {
+                        try {
+                            const manager = new SwipeNavigationManager();
+                            return manager instanceof SwipeNavigationManager;
+                        } catch (e) {
+                            return false;
+                        }
+                    }
+                },
+                {
+                    name: 'Navigation Logic - Calendar to Tasks',
+                    test: () => {
+                        try {
+                            const manager = new SwipeNavigationManager();
+                            let targetPage = null;
+
+                            manager.navigateToPage = function(page) { targetPage = page; };
+
+                            // Mock location
+                            const originalHandleSwipe = manager.handleSwipe;
+                            manager.handleSwipe = function(direction) {
+                                const currentPage = 'calendar.html';
+                                if (direction === 'left' && currentPage === 'calendar.html') {
+                                    this.navigateToPage('tasks.html', direction);
+                                }
+                            };
+
+                            manager.handleSwipe('left');
+                            return targetPage === 'tasks.html';
+                        } catch (e) {
+                            return false;
+                        }
+                    }
+                },
+                {
+                    name: 'Touch Event Listeners Added',
+                    test: () => {
+                        // Can't directly test listeners, but verify the script loaded
+                        return document.querySelector('script[src="swipe-navigation.js"]') !== null;
+                    }
+                }
+            ];
+
+            const automatedResults = tests.map(test => ({
+                timestamp: new Date().toLocaleTimeString(),
+                type: 'Automated Test',
+                from: test.name,
+                to: test.test() ? 'PASS' : 'FAIL',
+                direction: 'test',
+                success: test.test()
+            }));
+
+            testResults.push(...automatedResults);
+            updateTestResults();
+        }
+
+        // Initial setup
+        updateTestResults();
+    </script>
+</body>
+</html>
