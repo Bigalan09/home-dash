@@ -7,14 +7,216 @@
             content="width=720, height=1280, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
         />
         <title>Home Dashboard</title>
-        <script>
-            // Redirect to calendar page immediately
-            window.location.href = 'calendar.html';
-        </script>
+        <link rel="stylesheet" href="modern-dark.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"
+        />
+        <style>
+            .dashboard-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: 1fr 1fr;
+                gap: 20px;
+                padding: 20px;
+                height: 100%;
+            }
+
+            .dashboard-button {
+                background: var(--bg-elev);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 15px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                color: var(--text);
+                font-size: 1.1rem;
+                font-weight: 500;
+                padding: 20px;
+            }
+
+            .dashboard-button:hover {
+                background: var(--accent);
+                color: white;
+                transform: translateY(-5px);
+            }
+
+            .dashboard-button:active {
+                transform: translateY(0);
+            }
+
+            .button-icon {
+                font-size: 3rem;
+            }
+        </style>
     </head>
     <body>
-        <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #0b0e14; color: #e6e6e6; font-family: Inter, sans-serif;">
-            <p>Redirecting to Calendar...</p>
+        <div class="refresh-indicator" id="refreshIndicator"></div>
+
+        <div class="dashboard">
+            <header class="header">
+                <div class="system-controls">
+                    <button
+                        class="system-btn"
+                        onclick="refreshData()"
+                        title="Refresh Data"
+                    >
+                        <i class="ti ti-refresh"></i>
+                    </button>
+                    <button
+                        class="system-btn"
+                        onclick="toggleScreen()"
+                        title="Screen Off"
+                    >
+                        <i class="ti ti-power"></i>
+                    </button>
+                </div>
+                <div class="time-section">
+                    <div class="time" id="time">--:--:--</div>
+                    <div class="date" id="date">Loading...</div>
+                </div>
+                <div class="weather-section" onclick="showWeatherDetails()">
+                    <!-- Weather loading state -->
+                    <div
+                        class="loading-state weather-loading"
+                        id="weatherLoading"
+                    >
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">Loading weather...</div>
+                    </div>
+
+                    <!-- Weather content -->
+                    <div class="weather-content" id="weatherContent">
+                        <div class="weather-icon" id="weatherIcon">🌤️</div>
+                        <div class="weather-info">
+                            <div class="temperature" id="temperature">18°C</div>
+                            <div class="weather-desc" id="weatherDesc">
+                                Partly Cloudy
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="quote-section">
+                <div class="quote" id="dailyQuote">
+                    "The future belongs to those who believe in the beauty of
+                    their dreams."
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="dashboard-grid">
+                    <button
+                        class="dashboard-button"
+                        onclick="window.location.href='calendar.html'"
+                    >
+                        <i class="button-icon ti ti-calendar"></i>
+                        <span>Calendar</span>
+                    </button>
+                    <button
+                        class="dashboard-button"
+                        onclick="window.location.href='tasks.html'"
+                    >
+                        <i class="button-icon ti ti-checklist"></i>
+                        <span>Tasks</span>
+                    </button>
+                    <button class="dashboard-button">
+                        <i class="button-icon ti ti-hourglass"></i>
+                        <span>Timers</span>
+                    </button>
+                    <button class="dashboard-button">
+                        <i class="button-icon ti ti-cookie"></i>
+                        <span>Recipes</span>
+                    </button>
+                </div>
+            </div>
         </div>
+
+        <!-- Modals -->
+        <div class="modal" id="eventModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Event Details</div>
+                    <button
+                        class="close-btn"
+                        onclick="closeModal('eventModal')"
+                    >
+                        <i class="ti ti-x"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="eventModalBody">
+                    <!-- Event details will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="taskModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">Task Details</div>
+                    <button class="close-btn" onclick="closeModal('taskModal')">
+                        <i class="ti ti-x"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="taskModalBody">
+                    <!-- Task details will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="weatherModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <i class="ti ti-cloud"></i> Weather Forecast
+                    </div>
+                    <button
+                        class="close-btn"
+                        onclick="closeModal('weatherModal')"
+                    >
+                        <i class="ti ti-x"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="weatherModalBody">
+                    <div class="weather-view-controls">
+                        <button
+                            class="view-btn"
+                            data-view="hourly"
+                            onclick="switchWeatherView('hourly')"
+                        >
+                            <i class="ti ti-clock"></i> Hourly
+                        </button>
+                        <button
+                            class="view-btn active"
+                            data-view="daily"
+                            onclick="switchWeatherView('daily')"
+                        >
+                            <i class="ti ti-calendar"></i> 5-Day
+                        </button>
+                    </div>
+                    <div
+                        class="weather-forecast-container"
+                        id="weatherForecastContainer"
+                    >
+                        <!-- Weather forecast will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div class="toast" id="toast">
+            <div class="toast-content">
+                <i class="toast-icon ti ti-check"></i>
+                <span class="toast-message">Data refreshed successfully</span>
+            </div>
+        </div>
+
+        <script src="script.js"></script>
     </body>
 </html>

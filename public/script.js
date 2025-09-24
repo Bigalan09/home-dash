@@ -578,7 +578,7 @@ class MissionControlDashboard {
                           .slice(0, 3)
                           .map(
                             (event) => `
-                            <div class="day-event priority-${event.priority}" onclick="event.stopPropagation(); showEventDetails('${event.id}')">
+                            <div class="day-event priority-${event.priority}">
                                 ${this.escapeHtml(event.title)}
                             </div>
                         `,
