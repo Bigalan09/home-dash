@@ -788,12 +788,16 @@ body::before {
 }
 
 .event-overflow {
-    font-size: 0.5rem;
+    font-size: 0.7rem;
+    text-align: center;
+    padding: 2px;
+    background: rgba(0, 212, 255, 0.1);
     color: #00d4ff;
+    border-radius: 2px;
+    font-weight: 600;
     font-family: "Orbitron", monospace;
     text-align: center;
     margin-top: 2px;
-    font-weight: 600;
 }
 
 .daily-list {
@@ -1240,4 +1244,92 @@ body::before {
     .forecast-grid {
         max-height: 500px;
     }
+}
+
+/* Day Events Modal Styles */
+.day-events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.day-event-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.day-event-item:hover {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: #00d4ff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 212, 255, 0.15);
+}
+
+.day-event-item:active {
+    transform: translateY(0);
+}
+
+.day-event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.day-event-title {
+    font-family: "Poppins", sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e8f4fd;
+    flex: 1;
+    margin-right: 12px;
+}
+
+.day-event-time {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #00d4ff;
+    background: rgba(0, 212, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.day-event-details {
+    display: flex;
+    gap: 12px;
+    font-size: 0.8rem;
+    color: #a0d2f3;
+}
+
+.day-event-source {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.day-event-location {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Priority colors for day event items */
+.day-event-item.priority-1 {
+    border-left: 4px solid #ff4757;
+}
+
+.day-event-item.priority-2 {
+    border-left: 4px solid #ffa502;
+}
+
+.day-event-item.priority-3 {
+    border-left: 4px solid #00d4ff;
+}
+
+.day-event-item.priority-4 {
+    border-left: 4px solid #7bed9f;
 }

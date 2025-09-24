@@ -1111,8 +1111,59 @@ window.showDayEvents = function (dateStr) {
   const dayEvents = dashboard.events.filter((event) => event.date === dateStr);
   if (dayEvents.length === 0) return;
 
-  // For now, show the first event. Could expand to show all events for the day
-  window.showEventDetails(dayEvents[0].id);
+  // If only one event, show it directly
+  if (dayEvents.length === 1) {
+    window.showEventDetails(dayEvents[0].id);
+    return;
+  }
+
+  // Show overview modal for days with multiple events
+  // This provides a better UX on small screens
+  window.showDayEventsModal(dateStr, dayEvents);
+};
+
+window.showDayEventsModal = function (dateStr, dayEvents) {
+  // Format the date for display
+  const date = new Date(dateStr);
+  const formattedDate = date.toLocaleDateString("en-GB", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  // Update modal title
+  document.getElementById("modalDate").textContent = formattedDate;
+
+  // Generate events list
+  let eventsHtml = '<div class="day-events-list">';
+
+  dayEvents.forEach((event) => {
+    // Determine if this is a task or calendar event
+    const isTask = event.source === "Todoist";
+
+    eventsHtml += `
+      <div class="day-event-item priority-${event.priority}" onclick="closeModal('dayEventsModal'); ${isTask ? `showTaskDetails('${event.id}')` : `showEventDetails('${event.id}')`}">
+        <div class="day-event-header">
+          <span class="day-event-title">${dashboard.escapeHtml(event.title)}</span>
+          <span class="day-event-time">${event.time || "All day"}</span>
+        </div>
+        <div class="day-event-details">
+          <span class="day-event-source">${event.source}</span>
+          ${event.location ? `<span class="day-event-location"><i class="ti ti-map-pin"></i> ${dashboard.escapeHtml(event.location)}</span>` : ""}
+        </div>
+      </div>
+    `;
+  });
+
+  eventsHtml += "</div>";
+
+  // Populate modal body
+  document.getElementById("dayEventsModalBody").innerHTML = eventsHtml;
+
+  // Show modal
+  const modal = document.getElementById("dayEventsModal");
+  modal.classList.add("active");
 };
 
 window.showEventDetails = function (eventId) {

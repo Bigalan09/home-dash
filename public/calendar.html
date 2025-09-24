@@ -241,6 +241,25 @@
             </div>
         </div>
 
+        <div class="modal" id="dayEventsModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        Events for <span id="modalDate"></span>
+                    </div>
+                    <button
+                        class="close-btn"
+                        onclick="closeModal('dayEventsModal')"
+                    >
+                        <i class="ti ti-x"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="dayEventsModalBody">
+                    <!-- Day events will be populated here -->
+                </div>
+            </div>
+        </div>
+
         <!-- Toast Notification -->
         <div class="toast" id="toast">
             <div class="toast-content">
