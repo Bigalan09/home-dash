@@ -1217,13 +1217,13 @@ const server = Bun.serve({
 
     // Serve index.html for root path
     if (path === "/" || path === "/index.html") {
-      return new Response(file("./index.html"), {
+      return new Response(file("./public/index.html"), {
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
     }
 
-    // Serve static files
-    const filePath = `.${url.pathname}`;
+    // Serve static files from public directory
+    const filePath = `./public${url.pathname}`;
     const blob = Bun.file(filePath);
 
     if (await blob.exists()) {
